@@ -1,0 +1,80 @@
+=== miniRV emulator ===
+rm -rf build
+g++ -Iemulator/include -std=c++17 -Wall -Wextra -Wpedantic -Werror emulator/src/minirv_emu.cpp emulator/tests/test_minirv.cpp -o build/test_minirv
+./build/test_minirv
+[PASS] official ADDI/JALR E5 program
+[PASS] JALR rd equals rs1
+[PASS] negative ADDI immediate
+[PASS] ADD and overflow
+[PASS] LUI
+[PASS] LW/SW
+[PASS] LW negative offset
+[PASS] SW negative offset
+[PASS] LBU
+[PASS] SB
+[PASS] x0 hardwiring
+[PASS] invalid RV32E register
+[PASS] invalid RV32E rs1
+[PASS] invalid RV32E rs2
+[PASS] illegal ADD funct7
+[PASS] illegal load funct3
+[PASS] illegal store funct3
+[PASS] illegal JALR funct3
+[PASS] EBREAK
+[PASS] errors and execution bound
+[PASS] misaligned SW
+21/21 tests passed
+
+=== RTL lint ===
+verilator --lint-only -Wall --top-module minirv_core rtl/vsrc/minirv_regfile.v rtl/vsrc/minirv_decoder.v rtl/vsrc/minirv_immgen.v rtl/vsrc/minirv_alu.v rtl/vsrc/minirv_core.v
+- V e r i l a t i o n   R e p o r t: Verilator 5.050 2026-07-01 rev v5.050-60-g3d2421f3b
+- Verilator: Built from 0.104 MB sources in 6 modules, into 0.099 MB in 3 C++ files needing 0.000 MB
+- Verilator: Walltime 0.122 s (elab=0.006, cvt=0.070, bld=0.000); cpu 0.119 s on 1 threads; allocated 23.402 MB
+
+=== RTL build ===
+verilator --cc --exe --build --trace-fst -Wall --top-module minirv_core --Mdir build/rtl/obj_dir -CFLAGS "-std=c++17 -Wall -Wextra -Werror -I/home/chzione/projects/minirv-npc-difftest/rtl/csrc" rtl/vsrc/minirv_regfile.v rtl/vsrc/minirv_decoder.v rtl/vsrc/minirv_immgen.v rtl/vsrc/minirv_alu.v rtl/vsrc/minirv_core.v rtl/csrc/minirv_rtl_test.cpp
+make[1]: Entering directory '/home/chzione/projects/minirv-npc-difftest/build/rtl/obj_dir'
+g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=1 -DVM_TRACE_FST=1 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -std=c++17 -Wall -Wextra -Werror -I/home/chzione/projects/minirv-npc-difftest/rtl/csrc   -Os  -c -o minirv_rtl_test.o ../../../rtl/csrc/minirv_rtl_test.cpp
+g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=1 -DVM_TRACE_FST=1 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -std=c++17 -Wall -Wextra -Werror -I/home/chzione/projects/minirv-npc-difftest/rtl/csrc   -c -o verilated.o /usr/local/share/verilator/include/verilated.cpp
+g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=1 -DVM_TRACE_FST=1 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -std=c++17 -Wall -Wextra -Werror -I/home/chzione/projects/minirv-npc-difftest/rtl/csrc   -c -o verilated_fst_c.o /usr/local/share/verilator/include/verilated_fst_c.cpp
+g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=1 -DVM_TRACE_FST=1 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -std=c++17 -Wall -Wextra -Werror -I/home/chzione/projects/minirv-npc-difftest/rtl/csrc   -c -o verilated_threads.o /usr/local/share/verilator/include/verilated_threads.cpp
+python3 /usr/local/share/verilator/bin/verilator_includer -DVL_INCLUDE_OPT=include Vminirv_core.cpp Vminirv_core___024root__0.cpp Vminirv_core__Trace__0.cpp Vminirv_core___024root__Slow.cpp Vminirv_core___024root__0__Slow.cpp Vminirv_core__Syms__Slow.cpp Vminirv_core__Trace__0__Slow.cpp Vminirv_core__TraceDecls__0__Slow.cpp > Vminirv_core__ALL.cpp
+g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=1 -DVM_TRACE_FST=1 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -std=c++17 -Wall -Wextra -Werror -I/home/chzione/projects/minirv-npc-difftest/rtl/csrc   -c -o Vminirv_core__ALL.o Vminirv_core__ALL.cpp
+g++    minirv_rtl_test.o verilated.o verilated_fst_c.o verilated_threads.o Vminirv_core__ALL.a   -lz  -pthread -lpthread -latomic -llz4 -lz   -o Vminirv_core
+rm Vminirv_core__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/home/chzione/projects/minirv-npc-difftest/build/rtl/obj_dir'
+- V e r i l a t i o n   R e p o r t: Verilator 5.050 2026-07-01 rev v5.050-60-g3d2421f3b
+- Verilator: Built from 0.097 MB sources in 6 modules, into 0.144 MB in 8 C++ files needing 0.000 MB
+- Verilator: Walltime 61.879 s (elab=0.006, cvt=0.099, bld=61.716); cpu 0.165 s on 1 threads; allocated 23.527 MB
+
+=== RTL directed tests ===
+build/rtl/obj_dir/Vminirv_core
+[PASS] official E5 ADDI/JALR
+[PASS] JALR rd equals rs1
+[PASS] negative ADDI
+[PASS] ADD and overflow
+[PASS] LUI
+[PASS] LW/SW
+[PASS] negative LW offset
+[PASS] negative SW offset
+[PASS] LBU byte order
+[PASS] SB
+[PASS] x0 hardwiring
+[PASS] EBREAK
+[PASS] invalid RV32E rd
+[PASS] invalid RV32E rs1
+[PASS] invalid RV32E rs2
+[PASS] illegal ADD funct7
+[PASS] illegal load funct3
+[PASS] illegal store funct3
+[PASS] illegal JALR funct3
+[PASS] misaligned LW
+[PASS] misaligned SW
+[PASS] misaligned instruction fetch
+22/22 RTL tests passed
+
+=== RTL waveform smoke test ===
+build/rtl/obj_dir/Vminirv_core --fst
+[PASS] official E5 ADDI/JALR
+1/1 RTL tests passed
+-rw-rw-r-- 1 chzione chzione 2.6K  7月 15 17:44 build/minirv_rtl.fst
