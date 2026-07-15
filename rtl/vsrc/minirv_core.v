@@ -1,4 +1,6 @@
-module minirv_core (
+module minirv_core #(
+    parameter [31:0] RESET_PC = 32'h00000000
+) (
     input         clk,
     input         reset,
 
@@ -134,7 +136,7 @@ module minirv_core (
 
   always @(posedge clk) begin
     if (reset) begin
-      pc <= 32'd0;
+      pc <= RESET_PC;
       commit_valid <= 1'b0;
       commit_pc <= 32'd0;
       commit_instr <= 32'd0;

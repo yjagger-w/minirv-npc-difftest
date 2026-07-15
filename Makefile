@@ -31,9 +31,18 @@ DIFFTEST_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
 	-CFLAGS "-std=c++17 -Wall -Wextra -Werror \
 	-I$(abspath emulator/include) -I$(abspath $(RTL_DIR)/csrc)" \
 	$(RTL_VSRCS) $(DIFFTEST_CSRC)
+AM_BUILD_DIR := $(BUILD_DIR)/am
+AM_BINARY := $(AM_BUILD_DIR)/Vminirv_core
+AM_CSRC := $(RTL_DIR)/csrc/minirv_am_runner.cpp
+AM_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
+	--top-module minirv_core -GRESET_PC=2147483648 --Mdir $(AM_BUILD_DIR) \
+	-CFLAGS "-std=c++17 -Wall -Wextra -Werror" \
+	$(RTL_VSRCS) $(AM_CSRC)
+AM_RUN_IMAGE = $(if $(strip $(IMAGE)),$(strip $(IMAGE)),$(strip $(AM_IMAGE)))
 
 .PHONY: build test clean rtl-lint rtl-build rtl-test rtl-clean rtl-wave \
-	difftest-build difftest-test difftest-wave difftest-clean regression
+	difftest-build difftest-test difftest-wave difftest-clean regression \
+	am-build am-run am-wave am-clean
 
 build: $(TEST_BINARY)
 
@@ -87,3 +96,23 @@ regression:
 	$(MAKE) rtl-lint
 	$(MAKE) rtl-test
 	$(MAKE) difftest-test
+
+am-build: $(AM_BINARY)
+
+$(AM_BINARY): $(RTL_VSRCS) $(AM_CSRC)
+	@mkdir -p $(AM_BUILD_DIR)
+	$(AM_BUILD_COMMAND)
+
+am-run: am-build
+	@test -n "$(AM_RUN_IMAGE)" || \
+		(echo "IMAGE is required: make am-run IMAGE=/absolute/path/program.bin"; exit 2)
+	$(AM_BINARY) $(AM_RUN_IMAGE)
+
+am-wave: am-build
+	@test -n "$(AM_RUN_IMAGE)" || \
+		(echo "IMAGE is required: make am-wave IMAGE=/absolute/path/program.bin"; exit 2)
+	$(AM_BINARY) $(AM_RUN_IMAGE) --fst
+	@test -s $(BUILD_DIR)/minirv_am.fst
+
+am-clean:
+	rm -rf $(AM_BUILD_DIR) $(BUILD_DIR)/minirv_am.fst

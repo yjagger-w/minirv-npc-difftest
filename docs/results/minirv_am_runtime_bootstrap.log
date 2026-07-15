@@ -1,0 +1,117 @@
+=== Full regression ===
+make test
+make[1]: Entering directory '/home/chzione/projects/minirv-npc-difftest'
+./build/test_minirv
+[PASS] official ADDI/JALR E5 program
+[PASS] JALR rd equals rs1
+[PASS] negative ADDI immediate
+[PASS] ADD and overflow
+[PASS] LUI
+[PASS] LW/SW
+[PASS] LW negative offset
+[PASS] SW negative offset
+[PASS] LBU
+[PASS] SB
+[PASS] x0 hardwiring
+[PASS] invalid RV32E register
+[PASS] invalid RV32E rs1
+[PASS] invalid RV32E rs2
+[PASS] illegal ADD funct7
+[PASS] illegal load funct3
+[PASS] illegal store funct3
+[PASS] illegal JALR funct3
+[PASS] EBREAK
+[PASS] errors and execution bound
+[PASS] misaligned SW
+21/21 tests passed
+make[1]: Leaving directory '/home/chzione/projects/minirv-npc-difftest'
+make rtl-lint
+make[1]: Entering directory '/home/chzione/projects/minirv-npc-difftest'
+verilator --lint-only -Wall --top-module minirv_core rtl/vsrc/minirv_regfile.v rtl/vsrc/minirv_decoder.v rtl/vsrc/minirv_immgen.v rtl/vsrc/minirv_alu.v rtl/vsrc/minirv_core.v
+- V e r i l a t i o n   R e p o r t: Verilator 5.050 2026-07-01 rev v5.050-60-g3d2421f3b
+- Verilator: Built from 0.104 MB sources in 6 modules, into 0.099 MB in 3 C++ files needing 0.000 MB
+- Verilator: Walltime 0.136 s (elab=0.006, cvt=0.075, bld=0.000); cpu 0.134 s on 1 threads; allocated 23.398 MB
+make[1]: Leaving directory '/home/chzione/projects/minirv-npc-difftest'
+make rtl-test
+make[1]: Entering directory '/home/chzione/projects/minirv-npc-difftest'
+build/rtl/obj_dir/Vminirv_core
+[PASS] official E5 ADDI/JALR
+[PASS] JALR rd equals rs1
+[PASS] negative ADDI
+[PASS] ADD and overflow
+[PASS] LUI
+[PASS] LW/SW
+[PASS] negative LW offset
+[PASS] negative SW offset
+[PASS] LBU byte order
+[PASS] SB
+[PASS] x0 hardwiring
+[PASS] EBREAK
+[PASS] invalid RV32E rd
+[PASS] invalid RV32E rs1
+[PASS] invalid RV32E rs2
+[PASS] illegal ADD funct7
+[PASS] illegal load funct3
+[PASS] illegal store funct3
+[PASS] illegal JALR funct3
+[PASS] misaligned LW
+[PASS] misaligned SW
+[PASS] misaligned instruction fetch
+22/22 RTL tests passed
+make[1]: Leaving directory '/home/chzione/projects/minirv-npc-difftest'
+make difftest-test
+make[1]: Entering directory '/home/chzione/projects/minirv-npc-difftest'
+build/difftest/obj_dir/Vminirv_core
+[PASS] official E5 ADDI/JALR
+[PASS] JALR rd equals rs1
+[PASS] negative ADDI
+[PASS] ADD and overflow
+[PASS] LUI
+[PASS] LW and SW
+[PASS] negative LW offset
+[PASS] negative SW offset
+[PASS] LBU byte order
+[PASS] SB sequence
+[PASS] x0 write suppression
+[PASS] integrated all instructions
+[PASS] EBREAK retirement
+[PASS] invalid RV32E rd
+[PASS] invalid RV32E rs1
+[PASS] invalid RV32E rs2
+[PASS] illegal ADD funct7
+[PASS] illegal load funct3
+[PASS] illegal store funct3
+[PASS] illegal JALR funct3
+[PASS] misaligned LW
+[PASS] misaligned SW
+[PASS] misaligned instruction fetch
+23/23 DiffTest tests passed
+make[1]: Leaving directory '/home/chzione/projects/minirv-npc-difftest'
+
+=== AM dummy ===
+build/am/Vminirv_core /home/chzione/projects/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin
+NPC image: /home/chzione/projects/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin
+Image size: 40 bytes
+Guest load address: 0x80000000
+Cycle limit: 100000
+HIT GOOD TRAP
+dummy_exit=0
+
+=== AM wrong ===
+build/am/Vminirv_core /home/chzione/projects/am-kernels/tests/cpu-tests/build/wrong-minirv-npc.bin
+NPC image: /home/chzione/projects/am-kernels/tests/cpu-tests/build/wrong-minirv-npc.bin
+Image size: 40 bytes
+Guest load address: 0x80000000
+Cycle limit: 100000
+HIT BAD TRAP: code=1
+make: *** [Makefile:108: am-run] Error 1
+wrong_exit=2
+
+=== AM waveform ===
+build/am/Vminirv_core /home/chzione/projects/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin --fst
+NPC image: /home/chzione/projects/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin
+Image size: 40 bytes
+Guest load address: 0x80000000
+Cycle limit: 100000
+HIT GOOD TRAP
+-rw-rw-r-- 1 chzione chzione 2.7K  7月 16 00:28 build/minirv_am.fst
