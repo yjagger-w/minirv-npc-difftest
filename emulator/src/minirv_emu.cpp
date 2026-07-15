@@ -30,6 +30,7 @@ void Emulator::reset() {
   status_ = Status::Running;
   error_message_.clear();
   trace_.clear();
+  last_event_ = {};
 }
 
 bool Emulator::range_valid(std::uint32_t address, std::size_t width) const {
@@ -101,10 +102,15 @@ Status Emulator::fail(Status status, const std::string& message) {
 }
 
 Status Emulator::step() {
+  last_event_ = {};
+  last_event_.valid = true;
+  last_event_.pc = pc_;
+  last_event_.next_pc = pc_;
   if (status_ != Status::Running) {
     return status_;
   }
   if ((pc_ & 3U) != 0U) {
+    last_event_.trap_cause = TrapCause::InstructionAddressMisaligned;
     return fail(Status::MisalignedAccess,
                 "misaligned instruction fetch at " + hex32(pc_));
   }
@@ -114,6 +120,7 @@ Status Emulator::step() {
     return fail(Status::MemoryError,
                 "instruction fetch outside memory at " + hex32(pc_));
   }
+  last_event_.instruction = instruction;
 
   const std::uint32_t old_pc = pc_;
   std::uint32_t next_pc = old_pc + 4U;
@@ -125,6 +132,7 @@ Status Emulator::step() {
   const std::uint32_t funct7 = instruction >> 25U;
 
   auto invalid_register = [&](std::uint32_t index, const char* field) {
+    last_event_.trap_cause = TrapCause::IllegalInstruction;
     return fail(Status::IllegalInstruction,
                 std::string("RV32E register ") + field + "=x" +
                     std::to_string(index) + " is invalid at " + hex32(old_pc));
@@ -143,6 +151,9 @@ Status Emulator::step() {
   auto write_register = [&](std::uint32_t index, std::uint32_t value) {
     if (index != 0U) {
       registers_[index] = value;
+      last_event_.rd_wen = true;
+      last_event_.rd = index;
+      last_event_.rd_data = value;
     }
   };
 
@@ -176,6 +187,7 @@ Status Emulator::step() {
         registers_[rs1] + static_cast<std::uint32_t>(immediate);
     if (funct3 == 2U) {
       if ((address & 3U) != 0U) {
+        last_event_.trap_cause = TrapCause::LoadAddressMisaligned;
         return fail(Status::MisalignedAccess,
                     "misaligned LW address " + hex32(address));
       }
@@ -207,6 +219,7 @@ Status Emulator::step() {
         registers_[rs1] + static_cast<std::uint32_t>(immediate);
     if (funct3 == 2U) {
       if ((address & 3U) != 0U) {
+        last_event_.trap_cause = TrapCause::StoreAddressMisaligned;
         return fail(Status::MisalignedAccess,
                     "misaligned SW address " + hex32(address));
       }
@@ -214,10 +227,19 @@ Status Emulator::step() {
         return fail(Status::MemoryError,
                     "SW outside memory at " + hex32(address));
       }
+      last_event_.mem_wen = true;
+      last_event_.mem_addr = address;
+      last_event_.mem_wmask = 0x0fU;
+      last_event_.mem_wdata = registers_[rs2];
     } else if (!write_byte(address,
                            static_cast<std::uint8_t>(registers_[rs2]))) {
       return fail(Status::MemoryError,
                   "SB outside memory at " + hex32(address));
+    } else {
+      last_event_.mem_wen = true;
+      last_event_.mem_addr = address;
+      last_event_.mem_wmask = 0x01U;
+      last_event_.mem_wdata = registers_[rs2];
     }
   } else if (opcode == 0x67U && funct3 == 0U) {  // JALR
     if (!check_rd_rs1()) {
@@ -229,6 +251,7 @@ Status Emulator::step() {
     next_pc = (old_rs1 + static_cast<std::uint32_t>(immediate)) & ~1U;
     write_register(rd, return_address);
   } else {
+    last_event_.trap_cause = TrapCause::IllegalInstruction;
     return fail(Status::IllegalInstruction,
                 "illegal instruction " + hex32(instruction) + " at " +
                     hex32(old_pc));
@@ -237,6 +260,9 @@ Status Emulator::step() {
   pc_ = next_pc;
   registers_[0] = 0;
   trace_.push_back({old_pc, instruction, next_pc});
+  last_event_.retired = true;
+  last_event_.next_pc = next_pc;
+  last_event_.ebreak = instruction == 0x00100073U;
   return status_;
 }
 

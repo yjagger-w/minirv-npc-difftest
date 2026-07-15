@@ -18,6 +18,31 @@ enum class Status {
   ExecutionLimit,
 };
 
+enum class TrapCause : std::uint8_t {
+  None = 0,
+  IllegalInstruction = 1,
+  InstructionAddressMisaligned = 2,
+  LoadAddressMisaligned = 3,
+  StoreAddressMisaligned = 4,
+};
+
+struct StepEvent {
+  bool valid = false;
+  bool retired = false;
+  std::uint32_t pc = 0;
+  std::uint32_t instruction = 0;
+  std::uint32_t next_pc = 0;
+  bool rd_wen = false;
+  std::uint32_t rd = 0;
+  std::uint32_t rd_data = 0;
+  bool mem_wen = false;
+  std::uint32_t mem_addr = 0;
+  std::uint8_t mem_wmask = 0;
+  std::uint32_t mem_wdata = 0;
+  bool ebreak = false;
+  TrapCause trap_cause = TrapCause::None;
+};
+
 struct TraceEntry {
   std::uint32_t pc;
   std::uint32_t instruction;
@@ -44,6 +69,7 @@ class Emulator {
   Status status() const { return status_; }
   const std::string& error_message() const { return error_message_; }
   const std::vector<TraceEntry>& trace() const { return trace_; }
+  const StepEvent& last_event() const { return last_event_; }
 
  private:
   bool range_valid(std::uint32_t address, std::size_t width) const;
@@ -55,6 +81,7 @@ class Emulator {
   Status status_ = Status::Running;
   std::string error_message_;
   std::vector<TraceEntry> trace_;
+  StepEvent last_event_;
 };
 
 const char* status_name(Status status);

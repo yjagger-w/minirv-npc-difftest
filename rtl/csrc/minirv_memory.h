@@ -11,6 +11,8 @@ class MiniRVMemory {
  public:
   explicit MiniRVMemory(std::size_t size = 64U * 1024U) : bytes_(size, 0) {}
 
+  std::size_t size() const { return bytes_.size(); }
+
   void write_byte(std::uint32_t address, std::uint8_t value) {
     check(address, 1, "byte write");
     bytes_[address] = value;

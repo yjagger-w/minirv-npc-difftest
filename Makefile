@@ -14,13 +14,26 @@ RTL_VSRCS := $(RTL_DIR)/vsrc/minirv_regfile.v \
 	$(RTL_DIR)/vsrc/minirv_alu.v \
 	$(RTL_DIR)/vsrc/minirv_core.v
 RTL_CSRC := $(RTL_DIR)/csrc/minirv_rtl_test.cpp
-RTL_HEADERS := $(RTL_DIR)/csrc/minirv_memory.h
+RTL_HEADERS := $(RTL_DIR)/csrc/minirv_memory.h $(RTL_DIR)/csrc/minirv_encoding.h
 RTL_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
 	--top-module minirv_core --Mdir $(RTL_OBJ_DIR) \
 	-CFLAGS "-std=c++17 -Wall -Wextra -Werror -I$(abspath $(RTL_DIR)/csrc)" \
 	$(RTL_VSRCS) $(RTL_CSRC)
+DIFFTEST_DIR := difftest
+DIFFTEST_BUILD_DIR := $(BUILD_DIR)/difftest
+DIFFTEST_OBJ_DIR := $(DIFFTEST_BUILD_DIR)/obj_dir
+DIFFTEST_BINARY := $(DIFFTEST_OBJ_DIR)/Vminirv_core
+DIFFTEST_CSRC := $(DIFFTEST_DIR)/minirv_difftest_main.cpp \
+	emulator/src/minirv_emu.cpp
+DIFFTEST_HEADERS := emulator/include/minirv_emu.h $(RTL_HEADERS)
+DIFFTEST_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
+	--top-module minirv_core --Mdir $(DIFFTEST_OBJ_DIR) \
+	-CFLAGS "-std=c++17 -Wall -Wextra -Werror \
+	-I$(abspath emulator/include) -I$(abspath $(RTL_DIR)/csrc)" \
+	$(RTL_VSRCS) $(DIFFTEST_CSRC)
 
-.PHONY: build test clean rtl-lint rtl-build rtl-test rtl-clean rtl-wave
+.PHONY: build test clean rtl-lint rtl-build rtl-test rtl-clean rtl-wave \
+	difftest-build difftest-test difftest-wave difftest-clean regression
 
 build: $(TEST_BINARY)
 
@@ -52,3 +65,25 @@ rtl-wave: rtl-build
 
 rtl-clean:
 	rm -rf $(RTL_BUILD_DIR) $(BUILD_DIR)/minirv_rtl.fst
+
+difftest-build: $(DIFFTEST_BINARY)
+
+$(DIFFTEST_BINARY): $(RTL_VSRCS) $(DIFFTEST_CSRC) $(DIFFTEST_HEADERS)
+	@mkdir -p $(DIFFTEST_BUILD_DIR)
+	$(DIFFTEST_BUILD_COMMAND)
+
+difftest-test: difftest-build
+	$(DIFFTEST_BINARY)
+
+difftest-wave: difftest-build
+	$(DIFFTEST_BINARY) --fst
+	@test -s $(BUILD_DIR)/minirv_difftest.fst
+
+difftest-clean:
+	rm -rf $(DIFFTEST_BUILD_DIR) $(BUILD_DIR)/minirv_difftest.fst
+
+regression:
+	$(MAKE) test
+	$(MAKE) rtl-lint
+	$(MAKE) rtl-test
+	$(MAKE) difftest-test
