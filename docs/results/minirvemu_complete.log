@@ -1,0 +1,24 @@
+g++ -Iemulator/include -std=c++17 -Wall -Wextra -Wpedantic -Werror emulator/src/minirv_emu.cpp emulator/tests/test_minirv.cpp -o build/test_minirv
+./build/test_minirv
+[PASS] official ADDI/JALR E5 program
+[PASS] JALR rd equals rs1
+[PASS] negative ADDI immediate
+[PASS] ADD and overflow
+[PASS] LUI
+[PASS] LW/SW
+[PASS] LW negative offset
+[PASS] SW negative offset
+[PASS] LBU
+[PASS] SB
+[PASS] x0 hardwiring
+[PASS] invalid RV32E register
+[PASS] invalid RV32E rs1
+[PASS] invalid RV32E rs2
+[PASS] illegal ADD funct7
+[PASS] illegal load funct3
+[PASS] illegal store funct3
+[PASS] illegal JALR funct3
+[PASS] EBREAK
+[PASS] errors and execution bound
+[PASS] misaligned SW
+21/21 tests passed

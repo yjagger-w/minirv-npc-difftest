@@ -1,0 +1,15 @@
+/build/
+/obj_dir/
+
+*.o
+*.d
+*.fst
+*.vcd
+
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+.git.invalid-backup/
