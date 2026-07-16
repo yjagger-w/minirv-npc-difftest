@@ -1,0 +1,856 @@
+{
+  "schema_version": 1,
+  "mode": "report-only",
+  "report_name": "e6b_post_expansion_isa_gap_audit",
+  "report_title": "E6B post-expansion miniRV ISA gap audit",
+  "supported_whitelist": [
+    "add",
+    "addi",
+    "lui",
+    "lw",
+    "lbu",
+    "sw",
+    "sb",
+    "jalr",
+    "ebreak",
+    "auipc",
+    "beq",
+    "bne",
+    "sltiu"
+  ],
+  "requested_tests": [
+    "add",
+    "bit",
+    "fact",
+    "fib",
+    "if-else",
+    "load-store",
+    "max",
+    "min3",
+    "shift",
+    "string",
+    "sum",
+    "switch"
+  ],
+  "tests": [
+    {
+      "test": "add",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/add.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/add-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/add-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 2,
+        "addi": 18,
+        "auipc": 8,
+        "beq": 1,
+        "bne": 2,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 12,
+        "sltiu": 1,
+        "sub": 1,
+        "sw": 11
+      },
+      "supported": {
+        "add": 2,
+        "addi": 18,
+        "auipc": 8,
+        "beq": 1,
+        "bne": 2,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 12,
+        "sltiu": 1,
+        "sw": 11
+      },
+      "unsupported": {
+        "sub": 1
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "bit",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/bit.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/bit-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/bit-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 2,
+        "addi": 53,
+        "and": 2,
+        "andi": 7,
+        "auipc": 26,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 32,
+        "lbu": 4,
+        "lui": 2,
+        "lw": 4,
+        "or": 1,
+        "sb": 4,
+        "sll": 2,
+        "sltiu": 1,
+        "sltu": 1,
+        "srai": 2,
+        "sw": 3,
+        "xori": 5
+      },
+      "supported": {
+        "add": 2,
+        "addi": 53,
+        "auipc": 26,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 32,
+        "lbu": 4,
+        "lui": 2,
+        "lw": 4,
+        "sb": 4,
+        "sltiu": 1,
+        "sw": 3
+      },
+      "unsupported": {
+        "and": 2,
+        "andi": 7,
+        "or": 1,
+        "sll": 2,
+        "sltu": 1,
+        "srai": 2,
+        "xori": 5
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "fact",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/fact.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/fact-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/fact-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "fail",
+          "error": "# Building fact-image-dep [minirv-npc]\n+ CC tests/fact.c\n# Building am-archive [minirv-npc]\n# Building klib-archive [minirv-npc]\n# Creating image [minirv-npc]\n+ LD -> build/fact-minirv-npc.elf\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/am-kernels/tests/cpu-tests/build/minirv-npc/tests/fact.o: in function `.L9':\nfact.c:(.text.fact+0x28): undefined reference to `__mulsi3'\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/am-kernels/tests/cpu-tests/build/minirv-npc/tests/fact.o: in function `.L19':\nfact.c:(.text.startup.main+0x80): undefined reference to `__mulsi3'\ncollect2: error: ld returned 1 exit status\nmake: *** [/home/chzione/projects/abstract-machine/Makefile:150: /home/chzione/projects/am-kernels/tests/cpu-tests/build/fact-minirv-npc.elf] Error 1"
+        },
+        "isa_audit": {
+          "status": "not_run",
+          "error": ""
+        },
+        "execution": {
+          "status": "not_run",
+          "error": ""
+        }
+      },
+      "instructions": {},
+      "supported": {},
+      "unsupported": {},
+      "build_status": "fail"
+    },
+    {
+      "test": "fib",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/fib.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/fib-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/fib-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 1,
+        "addi": 12,
+        "auipc": 6,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 6,
+        "lui": 2,
+        "lw": 6,
+        "sltiu": 1,
+        "sub": 1,
+        "sw": 5
+      },
+      "supported": {
+        "add": 1,
+        "addi": 12,
+        "auipc": 6,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 6,
+        "lui": 2,
+        "lw": 6,
+        "sltiu": 1,
+        "sw": 5
+      },
+      "unsupported": {
+        "sub": 1
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "if-else",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/if-else.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/if-else-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/if-else-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "addi": 27,
+        "andi": 2,
+        "auipc": 6,
+        "beq": 1,
+        "blt": 6,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 5,
+        "slt": 2,
+        "sltiu": 1,
+        "sub": 3,
+        "sw": 4
+      },
+      "supported": {
+        "addi": 27,
+        "auipc": 6,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 5,
+        "sltiu": 1,
+        "sw": 4
+      },
+      "unsupported": {
+        "andi": 2,
+        "blt": 6,
+        "slt": 2,
+        "sub": 3
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "load-store",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/load-store.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/load-store-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/load-store-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 1,
+        "addi": 24,
+        "auipc": 14,
+        "beq": 1,
+        "bne": 3,
+        "ebreak": 1,
+        "jalr": 10,
+        "lbu": 12,
+        "lh": 1,
+        "lhu": 1,
+        "lui": 2,
+        "lw": 13,
+        "or": 9,
+        "sh": 1,
+        "sll": 1,
+        "slli": 10,
+        "sltiu": 6,
+        "srli": 1,
+        "sub": 6,
+        "sw": 8,
+        "xori": 1
+      },
+      "supported": {
+        "add": 1,
+        "addi": 24,
+        "auipc": 14,
+        "beq": 1,
+        "bne": 3,
+        "ebreak": 1,
+        "jalr": 10,
+        "lbu": 12,
+        "lui": 2,
+        "lw": 13,
+        "sltiu": 6,
+        "sw": 8
+      },
+      "unsupported": {
+        "lh": 1,
+        "lhu": 1,
+        "or": 9,
+        "sh": 1,
+        "sll": 1,
+        "slli": 10,
+        "srli": 1,
+        "sub": 6,
+        "xori": 1
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "max",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/max.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/max-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/max-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "addi": 20,
+        "auipc": 8,
+        "beq": 1,
+        "bge": 2,
+        "bne": 2,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 12,
+        "sltiu": 1,
+        "sub": 1,
+        "sw": 11
+      },
+      "supported": {
+        "addi": 20,
+        "auipc": 8,
+        "beq": 1,
+        "bne": 2,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 12,
+        "sltiu": 1,
+        "sw": 11
+      },
+      "unsupported": {
+        "bge": 2,
+        "sub": 1
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "min3",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/min3.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/min3-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/min3-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 1,
+        "addi": 28,
+        "auipc": 11,
+        "beq": 1,
+        "bge": 4,
+        "bne": 3,
+        "ebreak": 1,
+        "jalr": 9,
+        "lui": 2,
+        "lw": 17,
+        "slli": 1,
+        "sltiu": 1,
+        "sub": 1,
+        "sw": 14
+      },
+      "supported": {
+        "add": 1,
+        "addi": 28,
+        "auipc": 11,
+        "beq": 1,
+        "bne": 3,
+        "ebreak": 1,
+        "jalr": 9,
+        "lui": 2,
+        "lw": 17,
+        "sltiu": 1,
+        "sw": 14
+      },
+      "unsupported": {
+        "bge": 4,
+        "slli": 1,
+        "sub": 1
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "shift",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/shift.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/shift-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/shift-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "addi": 25,
+        "auipc": 10,
+        "beq": 1,
+        "bne": 3,
+        "ebreak": 1,
+        "jalr": 7,
+        "lui": 2,
+        "lw": 13,
+        "sltiu": 3,
+        "sra": 1,
+        "srl": 1,
+        "srli": 1,
+        "sub": 3,
+        "sw": 8
+      },
+      "supported": {
+        "addi": 25,
+        "auipc": 10,
+        "beq": 1,
+        "bne": 3,
+        "ebreak": 1,
+        "jalr": 7,
+        "lui": 2,
+        "lw": 13,
+        "sltiu": 3,
+        "sw": 8
+      },
+      "unsupported": {
+        "sra": 1,
+        "srl": 1,
+        "srli": 1,
+        "sub": 3
+      },
+      "build_status": "linked"
+    },
+    {
+      "test": "string",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/string.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/string-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/string-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "fail",
+          "error": "# Building string-image-dep [minirv-npc]\n+ CC tests/string.c\n# Building am-archive [minirv-npc]\n# Building klib-archive [minirv-npc]\n# Creating image [minirv-npc]\n+ LD -> build/string-minirv-npc.elf\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/abstract-machine/klib/build/klib-minirv-npc.a(string.o): in function `.L2':\nstring.c:(.text.strlen+0x1c): undefined reference to `putch'\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/abstract-machine/klib/build/klib-minirv-npc.a(string.o): in function `.L3':\nstring.c:(.text.strlen+0x3c): undefined reference to `putch'\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/abstract-machine/klib/build/klib-minirv-npc.a(string.o): in function `.L4':\nstring.c:(.text.strlen+0x5c): undefined reference to `putch'\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/abstract-machine/klib/build/klib-minirv-npc.a(string.o): in function `.L11':\nstring.c:(.text.strcpy+0x1c): undefined reference to `putch'\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/abstract-machine/klib/build/klib-minirv-npc.a(string.o): in function `.L12':\nstring.c:(.text.strcpy+0x3c): undefined reference to `putch'\n/usr/lib/riscv64-unknown-elf/bin/ld: /home/chzione/projects/abstract-machine/klib/build/klib-minirv-npc.a(string.o):string.c:(.text.strcpy+0x5c): more undefined references to `putch' follow\ncollect2: error: ld returned 1 exit status\nmake: *** [/home/chzione/projects/abstract-machine/Makefile:150: /home/chzione/projects/am-kernels/tests/cpu-tests/build/string-minirv-npc.elf] Error 1"
+        },
+        "isa_audit": {
+          "status": "not_run",
+          "error": ""
+        },
+        "execution": {
+          "status": "not_run",
+          "error": ""
+        }
+      },
+      "instructions": {},
+      "supported": {},
+      "unsupported": {},
+      "build_status": "fail"
+    },
+    {
+      "test": "sum",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/sum.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/sum-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/sum-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "pass",
+          "error": ""
+        },
+        "execution": {
+          "status": "not_run_audit_only",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 2,
+        "addi": 10,
+        "auipc": 2,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 5,
+        "lui": 3,
+        "lw": 3,
+        "sltiu": 1,
+        "sw": 4
+      },
+      "supported": {
+        "add": 2,
+        "addi": 10,
+        "auipc": 2,
+        "beq": 1,
+        "bne": 1,
+        "ebreak": 1,
+        "jalr": 5,
+        "lui": 3,
+        "lw": 3,
+        "sltiu": 1,
+        "sw": 4
+      },
+      "unsupported": {},
+      "build_status": "linked"
+    },
+    {
+      "test": "switch",
+      "source": "/home/chzione/projects/am-kernels/tests/cpu-tests/tests/switch.c",
+      "present": true,
+      "elf": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/switch-minirv-npc.elf",
+      "disassembly": "/home/chzione/projects/am-kernels/tests/cpu-tests/build/switch-minirv-npc.txt",
+      "stages": {
+        "compile": {
+          "status": "pass",
+          "error": ""
+        },
+        "assemble": {
+          "status": "pass",
+          "error": ""
+        },
+        "link": {
+          "status": "pass",
+          "error": ""
+        },
+        "isa_audit": {
+          "status": "unsupported",
+          "error": ""
+        },
+        "execution": {
+          "status": "skipped_unsupported",
+          "error": ""
+        }
+      },
+      "instructions": {
+        "add": 2,
+        "addi": 19,
+        "auipc": 6,
+        "beq": 3,
+        "bltu": 1,
+        "ebreak": 1,
+        "jal": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 6,
+        "slli": 2,
+        "sltiu": 1,
+        "sub": 1,
+        "sw": 4
+      },
+      "supported": {
+        "add": 2,
+        "addi": 19,
+        "auipc": 6,
+        "beq": 3,
+        "ebreak": 1,
+        "jalr": 8,
+        "lui": 2,
+        "lw": 6,
+        "sltiu": 1,
+        "sw": 4
+      },
+      "unsupported": {
+        "bltu": 1,
+        "jal": 1,
+        "slli": 2,
+        "sub": 1
+      },
+      "build_status": "linked"
+    }
+  ],
+  "newly_unlocked_tests": [
+    "sum"
+  ],
+  "aggregate_unsupported": {
+    "sub": 17,
+    "slli": 13,
+    "or": 10,
+    "andi": 9,
+    "bge": 6,
+    "blt": 6,
+    "xori": 6,
+    "sll": 3,
+    "and": 2,
+    "slt": 2,
+    "srai": 2,
+    "srli": 2,
+    "bltu": 1,
+    "jal": 1,
+    "lh": 1,
+    "lhu": 1,
+    "sh": 1,
+    "sltu": 1,
+    "sra": 1,
+    "srl": 1
+  },
+  "unsupported_required_by": {
+    "and": [
+      "bit"
+    ],
+    "andi": [
+      "bit",
+      "if-else"
+    ],
+    "bge": [
+      "max",
+      "min3"
+    ],
+    "blt": [
+      "if-else"
+    ],
+    "bltu": [
+      "switch"
+    ],
+    "jal": [
+      "switch"
+    ],
+    "lh": [
+      "load-store"
+    ],
+    "lhu": [
+      "load-store"
+    ],
+    "or": [
+      "bit",
+      "load-store"
+    ],
+    "sh": [
+      "load-store"
+    ],
+    "sll": [
+      "bit",
+      "load-store"
+    ],
+    "slli": [
+      "load-store",
+      "min3",
+      "switch"
+    ],
+    "slt": [
+      "if-else"
+    ],
+    "sltu": [
+      "bit"
+    ],
+    "sra": [
+      "shift"
+    ],
+    "srai": [
+      "bit"
+    ],
+    "srl": [
+      "shift"
+    ],
+    "srli": [
+      "load-store",
+      "shift"
+    ],
+    "sub": [
+      "add",
+      "fib",
+      "if-else",
+      "load-store",
+      "max",
+      "min3",
+      "shift",
+      "switch"
+    ],
+    "xori": [
+      "bit",
+      "load-store"
+    ]
+  },
+  "recommended_batch": [
+    "sub"
+  ],
+  "recommendation_reason": "This is the smallest observed unsupported-instruction set for any linked test (1 instruction(s)); it would unlock add, fib. Frequency and test coverage break equal-size ties."
+}

@@ -11,7 +11,10 @@ import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 
-SUPPORTED = ("add", "addi", "lui", "lw", "lbu", "sw", "sb", "jalr", "ebreak")
+SUPPORTED = (
+    "add", "addi", "lui", "lw", "lbu", "sw", "sb", "jalr", "ebreak",
+    "auipc", "beq", "bne", "sltiu",
+)
 REQUESTED_TESTS = (
     "add", "bit", "fact", "fib", "if-else", "load-store", "max", "min3",
     "shift", "string", "sum", "switch",
@@ -191,11 +194,14 @@ def write_markdown(path: Path, payload: dict) -> None:
     aggregate = payload["aggregate_unsupported"]
     required_by = payload["unsupported_required_by"]
     lines = [
-        "# E6B-1 miniRV ISA gap audit", "",
+        f"# {payload['report_title']}", "",
         "This is a report-only audit of final linked ELF disassembly. It does not change "
         "the strict `ARCH=minirv-npc` image check or execute images with ISA gaps.", "",
         "## Current supported instruction whitelist", "",
         ", ".join(f"`{item.upper()}`" for item in SUPPORTED), "",
+        "## Tests newly unlocked by E6B-2A", "",
+        ", ".join(f"`{item}`" for item in payload["newly_unlocked_tests"]) or "None",
+        "",
         "## Tests attempted", "",
         "| Test | Present | Build | Compile | Assemble | Link | ISA audit | Execution |",
         "|---|---:|---|---|---|---|---|---|",
@@ -231,7 +237,7 @@ def write_markdown(path: Path, payload: dict) -> None:
               ", ".join(f"`{item.upper()}`" for item in batch) or "None", "",
               payload["recommendation_reason"], "",
               "The proposal is derived only from the generated final-linked disassembly "
-              "recorded in this audit; it is not an implementation in E6B-1.", ""]
+              "recorded in this audit; it is not implemented by this report.", ""]
     failures = [(item["test"], name, data["error"])
                 for item in results for name, data in item["stages"].items()
                 if data["status"] == "fail"]
@@ -250,7 +256,18 @@ def main() -> int:
     parser.add_argument("--am-kernels", type=Path,
                         default=Path("/home/chzione/projects/am-kernels"))
     parser.add_argument("--objdump", default="riscv64-unknown-elf-objdump")
+    parser.add_argument(
+        "--report-name", default="e6b_post_expansion_isa_gap_audit",
+        help="output basename under docs/ and docs/results/ (no path separators)",
+    )
+    parser.add_argument(
+        "--report-title", default="E6B post-expansion miniRV ISA gap audit",
+        help="Markdown report title",
+    )
     args = parser.parse_args()
+    if (not args.report_name or Path(args.report_name).name != args.report_name or
+            args.report_name in (".", "..")):
+        parser.error("--report-name must be a nonempty basename without path separators")
     tests_dir = args.am_kernels.resolve() / "tests" / "cpu-tests"
     results = [audit_test(name, tests_dir, args.am_home.resolve(), args.objdump)
                for name in REQUESTED_TESTS]
@@ -263,8 +280,12 @@ def main() -> int:
     batch, reason = recommend(results)
     payload = {
         "schema_version": 1, "mode": "report-only",
+        "report_name": args.report_name, "report_title": args.report_title,
         "supported_whitelist": list(SUPPORTED),
         "requested_tests": list(REQUESTED_TESTS), "tests": results,
+        "newly_unlocked_tests": sorted(
+            item["test"] for item in results
+            if item["build_status"] == "linked" and not item["unsupported"]),
         "aggregate_unsupported": dict(sorted(aggregate.items(),
                                                key=lambda item: (-item[1], item[0]))),
         "unsupported_required_by": {key: value for key, value in sorted(required_by.items())},
@@ -272,9 +293,9 @@ def main() -> int:
     }
     results_dir = root / "docs" / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
-    json_path = results_dir / "e6b_isa_gap_audit.json"
-    csv_path = results_dir / "e6b_isa_gap_audit.csv"
-    markdown_path = root / "docs" / "e6b_isa_gap_audit.md"
+    json_path = results_dir / f"{args.report_name}.json"
+    csv_path = results_dir / f"{args.report_name}.csv"
+    markdown_path = root / "docs" / f"{args.report_name}.md"
     json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     write_csv(csv_path, results)
     write_markdown(markdown_path, payload)

@@ -173,11 +173,46 @@ Status Emulator::step() {
     }
     const std::int32_t immediate = sign_extend(instruction >> 20U, 12);
     write_register(rd, registers_[rs1] + static_cast<std::uint32_t>(immediate));
+  } else if (opcode == 0x13U && funct3 == 3U) {  // SLTIU
+    if (!check_rd_rs1()) {
+      return status_;
+    }
+    const std::uint32_t immediate = static_cast<std::uint32_t>(
+        sign_extend(instruction >> 20U, 12));
+    write_register(rd, registers_[rs1] < immediate ? 1U : 0U);
   } else if (opcode == 0x37U) {  // LUI
     if (rd >= registers_.size()) {
       return invalid_register(rd, "rd");
     }
     write_register(rd, instruction & 0xfffff000U);
+  } else if (opcode == 0x17U) {  // AUIPC
+    if (rd >= registers_.size()) {
+      return invalid_register(rd, "rd");
+    }
+    write_register(rd, old_pc + (instruction & 0xfffff000U));
+  } else if (opcode == 0x63U && (funct3 == 0U || funct3 == 1U)) {  // BEQ/BNE
+    if (rs1 >= registers_.size()) {
+      return invalid_register(rs1, "rs1");
+    }
+    if (rs2 >= registers_.size()) {
+      return invalid_register(rs2, "rs2");
+    }
+    const std::uint32_t immediate_bits =
+        ((instruction >> 31U) << 12U) |
+        (((instruction >> 7U) & 1U) << 11U) |
+        (((instruction >> 25U) & 0x3fU) << 5U) |
+        (((instruction >> 8U) & 0x0fU) << 1U);
+    const bool equal = registers_[rs1] == registers_[rs2];
+    const bool taken = funct3 == 0U ? equal : !equal;
+    if (taken) {
+      next_pc = old_pc + static_cast<std::uint32_t>(
+                             sign_extend(immediate_bits, 13));
+      if ((next_pc & 3U) != 0U) {
+        last_event_.trap_cause = TrapCause::InstructionAddressMisaligned;
+        return fail(Status::MisalignedAccess,
+                    "misaligned branch target " + hex32(next_pc));
+      }
+    }
   } else if (opcode == 0x03U && (funct3 == 2U || funct3 == 4U)) {  // LW/LBU
     if (!check_rd_rs1()) {
       return status_;
