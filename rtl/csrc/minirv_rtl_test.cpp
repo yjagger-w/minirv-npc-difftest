@@ -31,6 +31,7 @@ using minirv_encoding::lbu;
 using minirv_encoding::lui;
 using minirv_encoding::lw;
 using minirv_encoding::sltiu;
+using minirv_encoding::sub;
 
 void require(bool condition, const std::string& message) {
   if (!condition) {
@@ -203,6 +204,33 @@ void test_add_overflow(bool waveform) {
   require(rig.reg(6) == 0U, "ADD overflow did not wrap");
 }
 
+void test_sub(bool waveform) {
+  Rig rig(waveform);
+  rig.load({addi(1, 0, 7), addi(2, 0, 3), sub(3, 1, 2), sub(4, 2, 1),
+            addi(5, 0, 1), sub(6, 0, 5), lui(7, 0x80000U), sub(8, 7, 5),
+            sub(1, 1, 2), addi(9, 0, 7), addi(10, 0, 3), sub(10, 9, 10),
+            sub(0, 1, 2), encode_r(11, 9, 10), kEbreak});
+  rig.run_to_halt();
+  require(rig.reg(3) == 4U, "SUB 7 - 3 failed");
+  require(rig.reg(4) == 0xfffffffcU, "SUB 3 - 7 did not wrap");
+  require(rig.reg(6) == 0xffffffffU, "SUB 0 - 1 failed");
+  require(rig.reg(8) == 0x7fffffffU, "SUB signed-overflow bits failed");
+  require(rig.reg(1) == 4U, "SUB rd==rs1 failed");
+  require(rig.reg(10) == 4U, "SUB rd==rs2 failed");
+  require(rig.reg(0) == 0U, "SUB changed x0");
+  require(rig.reg(11) == 11U, "ADD changed after SUB");
+
+  Rig invalid_rd;
+  invalid_rd.load({sub(16, 1, 2)});
+  expect_trap(invalid_rd, 1);
+  Rig invalid_rs1;
+  invalid_rs1.load({sub(1, 16, 2)});
+  expect_trap(invalid_rs1, 1);
+  Rig invalid_rs2;
+  invalid_rs2.load({sub(1, 2, 16)});
+  expect_trap(invalid_rs2, 1);
+}
+
 void test_lui(bool waveform) {
   Rig rig(waveform);
   rig.load({lui(7, 0xabcdeU), kEbreak});
@@ -358,7 +386,7 @@ void test_invalid_rs2(bool waveform) {
 
 void test_illegal_add(bool waveform) {
   Rig rig(waveform);
-  rig.load({encode_r(1, 2, 3) | (0x20U << 25U)});
+  rig.load({encode_r(1, 2, 3) | (0x01U << 25U)});
   expect_trap(rig, 1);
 }
 
@@ -421,6 +449,7 @@ int main(int argc, char** argv) {
       {"JALR rd equals rs1", test_jalr_same_register},
       {"negative ADDI", test_negative_addi},
       {"ADD and overflow", test_add_overflow},
+      {"SUB semantics and validation", test_sub},
       {"LUI", test_lui},
       {"AUIPC", test_auipc},
       {"SLTIU", test_sltiu},

@@ -35,7 +35,7 @@ with no standard library or startup files.
 - `EBREAK` with `a0 != 0`: `HIT BAD TRAP`, nonzero process exit
 - Architectural traps, invalid memory accesses, and timeout also exit nonzero
 
-The final linked-image whitelist is `ADD`, `ADDI`, `LUI`, `AUIPC`, `SLTIU`,
+The final linked-image whitelist is `ADD`, `SUB`, `ADDI`, `LUI`, `AUIPC`, `SLTIU`,
 `BEQ`, `BNE`, `LW`, `LBU`, `SW`, `SB`, `JALR`, and `EBREAK`. The AM build
 disassembles with aliases disabled and rejects any other linked instruction.
 
@@ -67,7 +67,7 @@ make am-wave IMAGE=/absolute/path/program.bin
 
 ## Dependency revisions
 
-- abstract-machine: `b8276807c0b52b257f219c2f8e9c9875fbb5b2b3`
+- abstract-machine: `9a44d8587c21799e4c863811e78ffce8058f0a28`
 - am-kernels: `1600e123e48e0c672a0e6e2aa24ea9df6ee191a8`
 
 Both dependencies are maintained as separate sibling Git repositories and

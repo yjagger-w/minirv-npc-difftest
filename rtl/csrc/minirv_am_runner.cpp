@@ -145,23 +145,29 @@ class Runner {
   }
 
  private:
-  void drive_memory() {
+  void drive_instruction_memory() {
     if (dut_->reset) {
       dut_->imem_rdata = 0;
-      dut_->dmem_rdata = 0;
       return;
     }
     dut_->imem_rdata = memory_.read_word(dut_->imem_addr);
-    if (dut_->dmem_valid && !dut_->dmem_write) {
+  }
+
+  void drive_data_memory() {
+    if (!dut_->reset && dut_->dmem_valid && !dut_->dmem_write) {
       dut_->dmem_rdata = memory_.read_word(dut_->dmem_addr);
     } else {
       dut_->dmem_rdata = 0;
     }
   }
 
-  void settle() {
+  void settle(bool suppress_first_data = false) {
     for (int iteration = 0; iteration < 3; ++iteration) {
-      drive_memory();
+      drive_instruction_memory();
+      dut_->eval();
+      if (!suppress_first_data || iteration != 0) {
+        drive_data_memory();
+      }
       dut_->eval();
     }
   }
@@ -176,7 +182,7 @@ class Runner {
     settle();
     dump();
     dut_->clk = 1;
-    settle();
+    settle(true);
     dump();
     dut_->clk = 0;
     settle();

@@ -38,6 +38,7 @@ module minirv_core #(
   reg [31:0] pc;
 
   wire is_add;
+  wire is_sub;
   wire is_addi;
   wire is_lui;
   wire is_auipc;
@@ -63,7 +64,7 @@ module minirv_core #(
   wire [4:0] rs2_field = imem_rdata[24:20];
   wire [31:0] rs1_data;
   wire [31:0] rs2_data;
-  wire [31:0] alu_rhs = (is_add || is_jalr) ? rs2_data : imm_i;
+  wire [31:0] alu_rhs = (is_add || is_sub || is_jalr) ? rs2_data : imm_i;
   wire [31:0] alu_sum;
   wire [31:0] effective_addr = rs1_data + (is_sw || is_sb ? imm_s : imm_i);
   wire branch_taken = (is_beq && (rs1_data == rs2_data)) ||
@@ -80,7 +81,7 @@ module minirv_core #(
                           invalid_register || load_misaligned ||
                           store_misaligned;
   wire execute_enable = !reset && !halted && !instruction_trap;
-  wire result_instruction = is_add || is_addi || is_lui || is_auipc ||
+  wire result_instruction = is_add || is_sub || is_addi || is_lui || is_auipc ||
                             is_sltiu || is_lw || is_lbu || is_jalr;
   wire register_write = execute_enable && result_instruction &&
                         (rd_field[3:0] != 4'd0);
@@ -105,6 +106,7 @@ module minirv_core #(
   minirv_decoder decoder (
       .instr(imem_rdata),
       .is_add(is_add),
+      .is_sub(is_sub),
       .is_addi(is_addi),
       .is_lui(is_lui),
       .is_auipc(is_auipc),
@@ -137,6 +139,7 @@ module minirv_core #(
   minirv_alu alu (
       .lhs(rs1_data),
       .rhs(alu_rhs),
+      .subtract(is_sub),
       .sum(alu_sum)
   );
 
