@@ -39,10 +39,20 @@ AM_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
 	-CFLAGS "-std=c++17 -Wall -Wextra -Werror" \
 	$(RTL_VSRCS) $(AM_CSRC)
 AM_RUN_IMAGE = $(if $(strip $(IMAGE)),$(strip $(IMAGE)),$(strip $(AM_IMAGE)))
+SOC_BUILD_DIR := $(BUILD_DIR)/soc
+SOC_OBJ_DIR := $(SOC_BUILD_DIR)/obj_dir
+SOC_BINARY := $(SOC_OBJ_DIR)/Vminirv_soc
+SOC_VSRCS := $(RTL_VSRCS) rtl/soc/minirv_bus.v \
+	rtl/peripheral/minirv_gpio.v rtl/soc/minirv_soc.v
+SOC_CSRC := rtl/csrc/minirv_soc_test.cpp
+SOC_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
+	--top-module minirv_soc --Mdir $(SOC_OBJ_DIR) \
+	-CFLAGS "-std=c++17 -Wall -Wextra -Werror -I$(abspath $(RTL_DIR)/csrc)" \
+	$(SOC_VSRCS) $(SOC_CSRC)
 
 .PHONY: build test clean rtl-lint rtl-build rtl-test rtl-clean rtl-wave \
 	difftest-build difftest-test difftest-wave difftest-clean regression \
-	am-build am-run am-wave am-clean
+	am-build am-run am-wave am-clean soc-lint soc-build soc-test soc-wave soc-clean
 
 build: $(TEST_BINARY)
 
@@ -116,3 +126,22 @@ am-wave: am-build
 
 am-clean:
 	rm -rf $(AM_BUILD_DIR) $(BUILD_DIR)/minirv_am.fst
+
+soc-lint:
+	verilator --lint-only -Wall --top-module minirv_soc $(SOC_VSRCS)
+
+soc-build: $(SOC_BINARY)
+
+$(SOC_BINARY): $(SOC_VSRCS) $(SOC_CSRC) $(RTL_HEADERS)
+	@mkdir -p $(SOC_BUILD_DIR)
+	$(SOC_BUILD_COMMAND)
+
+soc-test: soc-build
+	$(SOC_BINARY)
+
+soc-wave: soc-build
+	$(SOC_BINARY) --fst
+	@test -s $(BUILD_DIR)/minirv_soc.fst
+
+soc-clean:
+	rm -rf $(SOC_BUILD_DIR) $(BUILD_DIR)/minirv_soc.fst
