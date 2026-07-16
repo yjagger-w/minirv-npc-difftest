@@ -14,6 +14,7 @@ from pathlib import Path
 SUPPORTED = (
     "add", "addi", "lui", "lw", "lbu", "sw", "sb", "jalr", "ebreak",
     "auipc", "beq", "bne", "sltiu",
+    "sub",
 )
 REQUESTED_TESTS = (
     "add", "bit", "fact", "fib", "if-else", "load-store", "max", "min3",
@@ -168,7 +169,8 @@ def write_csv(path: Path, results: list[dict]) -> None:
     with path.open("w", newline="", encoding="utf-8") as output:
         writer = csv.DictWriter(output, fieldnames=(
             "test", "present", "build_status", "compile", "assemble", "link",
-            "isa_audit", "execution", "mnemonic", "category", "support", "count"))
+            "isa_audit", "execution", "mnemonic", "category", "support", "count"),
+            lineterminator="\n")
         writer.writeheader()
         for item in results:
             rows = item["instructions"].items() or [("", "")]
@@ -264,11 +266,18 @@ def main() -> int:
         "--report-title", default="E6B post-expansion miniRV ISA gap audit",
         help="Markdown report title",
     )
+    parser.add_argument(
+        "--previously-compatible", default="",
+        help="comma-separated tests already compatible before this expansion",
+    )
     args = parser.parse_args()
     if (not args.report_name or Path(args.report_name).name != args.report_name or
             args.report_name in (".", "..")):
         parser.error("--report-name must be a nonempty basename without path separators")
     tests_dir = args.am_kernels.resolve() / "tests" / "cpu-tests"
+    previously_compatible = {
+        name.strip() for name in args.previously_compatible.split(",") if name.strip()
+    }
     results = [audit_test(name, tests_dir, args.am_home.resolve(), args.objdump)
                for name in REQUESTED_TESTS]
     aggregate = Counter()
@@ -285,7 +294,8 @@ def main() -> int:
         "requested_tests": list(REQUESTED_TESTS), "tests": results,
         "newly_unlocked_tests": sorted(
             item["test"] for item in results
-            if item["build_status"] == "linked" and not item["unsupported"]),
+            if item["build_status"] == "linked" and not item["unsupported"] and
+            item["test"] not in previously_compatible),
         "aggregate_unsupported": dict(sorted(aggregate.items(),
                                                key=lambda item: (-item[1], item[0]))),
         "unsupported_required_by": {key: value for key, value in sorted(required_by.items())},

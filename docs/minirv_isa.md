@@ -18,6 +18,7 @@ four-byte aligned.
 | Instruction | Encoding constraint | Operation |
 |---|---|---|
 | `ADD` | opcode `0x33`, funct3 `0`, funct7 `0` | `rd = rs1 + rs2` |
+| `SUB` | opcode `0x33`, funct3 `0`, funct7 `0x20` | `rd = rs1 - rs2` modulo 2^32 |
 | `ADDI` | opcode `0x13`, funct3 `0` | `rd = rs1 + sext(imm12)` |
 | `LUI` | opcode `0x37` | `rd = instruction[31:12] << 12` |
 | `AUIPC` | opcode `0x17` | `rd = pc + (instruction[31:12] << 12)` |

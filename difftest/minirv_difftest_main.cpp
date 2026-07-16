@@ -38,6 +38,7 @@ using minirv_encoding::lbu;
 using minirv_encoding::lui;
 using minirv_encoding::lw;
 using minirv_encoding::sltiu;
+using minirv_encoding::sub;
 
 constexpr std::size_t kMemorySize = 64U * 1024U;
 constexpr std::size_t kCycleLimit = 300;
@@ -76,6 +77,7 @@ const char* instruction_name(std::uint32_t instruction) {
   const std::uint32_t funct7 = instruction >> 25U;
   if (instruction == kEbreak) return "EBREAK";
   if (opcode == 0x33U && funct3 == 0U && funct7 == 0U) return "ADD";
+  if (opcode == 0x33U && funct3 == 0U && funct7 == 0x20U) return "SUB";
   if (opcode == 0x13U && funct3 == 0U) return "ADDI";
   if (opcode == 0x13U && funct3 == 3U) return "SLTIU";
   if (opcode == 0x37U) return "LUI";
@@ -450,6 +452,15 @@ std::vector<TestSpec> make_tests() {
        {addi(1, 0, 7), addi(2, 0, 9), encode_r(3, 1, 2),
         addi(4, 0, -1), addi(5, 0, 1), encode_r(6, 4, 5), kEbreak},
        {}, {}, {}, {{3, 16U}, {6, 0U}}, {}, {}},
+      {"SUB semantics and overlap",
+       {addi(1, 0, 7), addi(2, 0, 3), sub(3, 1, 2), sub(4, 2, 1),
+        addi(5, 0, 1), sub(6, 0, 5), lui(7, 0x80000U), sub(8, 7, 5),
+        sub(1, 1, 2), addi(9, 0, 7), addi(10, 0, 3), sub(10, 9, 10),
+        sub(0, 1, 2), encode_r(11, 9, 10), kEbreak},
+       {}, {}, {},
+       {{3, 4U}, {4, 0xfffffffcU}, {6, 0xffffffffU}, {8, 0x7fffffffU},
+        {1, 4U}, {10, 4U}, {0, 0U}, {11, 11U}},
+       {}, {}},
       {"LUI", {lui(7, 0xabcdeU), kEbreak}, {}, {}, {},
        {{7, 0xabcde000U}}, {}, {}},
       {"AUIPC semantics",
@@ -516,7 +527,13 @@ std::vector<TestSpec> make_tests() {
        TrapCause::IllegalInstruction, {}, {}, {}},
       {"invalid RV32E rs2", {encode_r(1, 0, 16)}, {}, {},
        TrapCause::IllegalInstruction, {}, {}, {}},
-      {"illegal ADD funct7", {encode_r(1, 2, 3) | (0x20U << 25U)}, {}, {},
+      {"SUB invalid RV32E rd", {sub(16, 1, 2)}, {}, {},
+       TrapCause::IllegalInstruction, {}, {}, {}},
+      {"SUB invalid RV32E rs1", {sub(1, 16, 2)}, {}, {},
+       TrapCause::IllegalInstruction, {}, {}, {}},
+      {"SUB invalid RV32E rs2", {sub(1, 2, 16)}, {}, {},
+       TrapCause::IllegalInstruction, {}, {}, {}},
+      {"illegal opcode 0x33 funct7", {encode_r(1, 2, 3) | (0x01U << 25U)}, {}, {},
        TrapCause::IllegalInstruction, {}, {}, {}},
       {"illegal load funct3", {encode_i(0, 1, 1, 2, 0x03U)}, {}, {},
        TrapCause::IllegalInstruction, {}, {}, {}},

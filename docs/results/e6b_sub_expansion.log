@@ -1,0 +1,52 @@
+E6B-2B SUB expansion validation
+================================
+
+Baseline
+  make regression: PASS
+  emulator: 25/25
+  RTL lint: PASS
+  standalone RTL: 26/26
+  DiffTest: 32/32
+
+Final regression
+  emulator: 26/26
+  RTL lint: PASS
+  standalone RTL: 27/27
+  DiffTest: 36/36
+
+Final linked AM image audits
+  dummy: PASS (7 instructions)
+  wrong: PASS (7 instructions)
+  sum: PASS (33 instructions)
+  add: PASS (67 instructions)
+  fib: PASS (43 instructions)
+
+AM execution
+  dummy: HIT GOOD TRAP; exit 0
+  wrong: HIT BAD TRAP: code=1; nonzero exit
+  sum: HIT GOOD TRAP; exit 0
+  add: HIT GOOD TRAP; exit 0
+  fib: HIT GOOD TRAP; exit 0
+  add waveform: HIT GOOD TRAP; build/minirv_am.fst nonempty
+
+Strict rejection
+  max direct final-linked check: rejected BGE; nonzero
+
+add inventory
+  add=2 addi=18 auipc=8 beq=1 bne=2 ebreak=1 jalr=8 lui=2
+  lw=12 sltiu=1 sub=1 sw=11
+
+fib inventory
+  add=1 addi=12 auipc=6 beq=1 bne=1 ebreak=1 jalr=6 lui=2
+  lw=6 sltiu=1 sub=1 sw=5
+
+Post-expansion audit
+  newly compatible: add, fib
+  next smallest batch: BGE (unlocks max)
+  remaining: slli=13 or=10 andi=9 bge=6 blt=6 xori=6 sll=3 and=2
+             slt=2 srai=2 srli=2 bltu=1 jal=1 lh=1 lhu=1 sh=1
+             sltu=1 sra=1 srl=1
+
+Dependencies
+  abstract-machine: 9a44d8587c21799e4c863811e78ffce8058f0a28
+  am-kernels: 1600e123e48e0c672a0e6e2aa24ea9df6ee191a8

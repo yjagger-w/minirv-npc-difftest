@@ -12,6 +12,11 @@ inline std::uint32_t encode_r(std::uint32_t rd, std::uint32_t rs1,
   return (rs2 << 20U) | (rs1 << 15U) | (rd << 7U) | 0x33U;
 }
 
+inline std::uint32_t sub(std::uint32_t rd, std::uint32_t rs1,
+                         std::uint32_t rs2) {
+  return encode_r(rd, rs1, rs2) | (0x20U << 25U);
+}
+
 inline std::uint32_t encode_i(std::int32_t immediate, std::uint32_t rs1,
                               std::uint32_t funct3, std::uint32_t rd,
                               std::uint32_t opcode) {

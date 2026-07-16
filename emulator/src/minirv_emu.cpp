@@ -159,14 +159,16 @@ Status Emulator::step() {
 
   if (instruction == 0x00100073U) {  // EBREAK
     status_ = Status::Halted;
-  } else if (opcode == 0x33U && funct3 == 0U && funct7 == 0U) {  // ADD
+  } else if (opcode == 0x33U && funct3 == 0U &&
+             (funct7 == 0U || funct7 == 0x20U)) {  // ADD/SUB
     if (!check_rd_rs1()) {
       return status_;
     }
     if (rs2 >= registers_.size()) {
       return invalid_register(rs2, "rs2");
     }
-    write_register(rd, registers_[rs1] + registers_[rs2]);
+    write_register(rd, funct7 == 0U ? registers_[rs1] + registers_[rs2]
+                                    : registers_[rs1] - registers_[rs2]);
   } else if (opcode == 0x13U && funct3 == 0U) {  // ADDI
     if (!check_rd_rs1()) {
       return status_;

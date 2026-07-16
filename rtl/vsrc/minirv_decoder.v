@@ -1,6 +1,7 @@
 module minirv_decoder (
     input  [31:0] instr,
     output reg    is_add,
+    output reg    is_sub,
     output reg    is_addi,
     output reg    is_lui,
     output reg    is_auipc,
@@ -25,6 +26,7 @@ module minirv_decoder (
 
   always @(*) begin
     is_add = 1'b0;
+    is_sub = 1'b0;
     is_addi = 1'b0;
     is_lui = 1'b0;
     is_auipc = 1'b0;
@@ -47,8 +49,10 @@ module minirv_decoder (
     end else begin
       case (opcode)
         7'h33: begin
-          if ((funct3 == 3'd0) && (funct7 == 7'd0)) begin
-            is_add = 1'b1;
+          if ((funct3 == 3'd0) &&
+              ((funct7 == 7'd0) || (funct7 == 7'h20))) begin
+            is_add = funct7 == 7'd0;
+            is_sub = funct7 == 7'h20;
             use_rd = 1'b1;
             use_rs1 = 1'b1;
             use_rs2 = 1'b1;

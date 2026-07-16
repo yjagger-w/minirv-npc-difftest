@@ -21,6 +21,10 @@ std::uint32_t encode_r(std::uint32_t rd, std::uint32_t rs1,
   return (rs2 << 20U) | (rs1 << 15U) | (rd << 7U) | 0x33U;
 }
 
+std::uint32_t sub(std::uint32_t rd, std::uint32_t rs1, std::uint32_t rs2) {
+  return encode_r(rd, rs1, rs2) | (0x20U << 25U);
+}
+
 std::uint32_t encode_i(std::int32_t immediate, std::uint32_t rs1,
                        std::uint32_t funct3, std::uint32_t rd,
                        std::uint32_t opcode) {
@@ -143,6 +147,27 @@ void test_add_and_overflow() {
   run_to_ebreak(emulator);
   require(emulator.reg(3) == 16U, "ADD returned the wrong sum");
   require(emulator.reg(6) == 0U, "ADD did not wrap modulo 2^32");
+}
+
+void test_sub() {
+  Emulator emulator;
+  load(emulator, {addi(1, 0, 7), addi(2, 0, 3), sub(3, 1, 2),
+                  sub(4, 2, 1), addi(5, 0, 1), sub(6, 0, 5),
+                  lui(7, 0x80000U), sub(8, 7, 5), sub(1, 1, 2),
+                  addi(9, 0, 7), addi(10, 0, 3), sub(10, 9, 10),
+                  sub(0, 1, 2), encode_r(11, 9, 10), kEbreak});
+  run_to_ebreak(emulator);
+  require(emulator.reg(3) == 4U, "SUB 7 - 3 failed");
+  require(emulator.reg(4) == 0xfffffffcU, "SUB 3 - 7 did not wrap");
+  require(emulator.reg(6) == 0xffffffffU, "SUB 0 - 1 failed");
+  require(emulator.reg(8) == 0x7fffffffU, "SUB signed-overflow bits failed");
+  require(emulator.reg(1) == 4U, "SUB rd==rs1 failed");
+  require(emulator.reg(10) == 4U, "SUB rd==rs2 failed");
+  require(emulator.reg(0) == 0U, "SUB changed x0");
+  require(emulator.reg(11) == 11U, "ADD behavior changed after SUB");
+  require_illegal_encoding(sub(16, 1, 2), "SUB invalid rd");
+  require_illegal_encoding(sub(1, 16, 2), "SUB invalid rs1");
+  require_illegal_encoding(sub(1, 2, 16), "SUB invalid rs2");
 }
 
 void test_lui() {
@@ -336,8 +361,8 @@ void require_illegal_encoding(std::uint32_t instruction,
 }
 
 void test_illegal_add_funct7() {
-  require_illegal_encoding(encode_r(1, 2, 3) | (0x20U << 25U),
-                           "ADD with unsupported funct7");
+  require_illegal_encoding(encode_r(1, 2, 3) | (0x01U << 25U),
+                           "opcode 0x33 with unsupported funct7");
 }
 
 void test_illegal_load_funct3() {
@@ -399,6 +424,7 @@ int main() {
       {"JALR rd equals rs1", test_jalr_rd_equals_rs1},
       {"negative ADDI immediate", test_negative_addi},
       {"ADD and overflow", test_add_and_overflow},
+      {"SUB semantics and validation", test_sub},
       {"LUI", test_lui},
       {"AUIPC semantics and validation", test_auipc},
       {"SLTIU semantics and validation", test_sltiu},
