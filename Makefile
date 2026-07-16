@@ -43,16 +43,26 @@ SOC_BUILD_DIR := $(BUILD_DIR)/soc
 SOC_OBJ_DIR := $(SOC_BUILD_DIR)/obj_dir
 SOC_BINARY := $(SOC_OBJ_DIR)/Vminirv_soc
 SOC_VSRCS := $(RTL_VSRCS) rtl/soc/minirv_bus.v \
-	rtl/peripheral/minirv_gpio.v rtl/soc/minirv_soc.v
+	rtl/peripheral/minirv_gpio.v rtl/peripheral/minirv_uart_tx.v \
+	rtl/soc/minirv_soc.v
 SOC_CSRC := rtl/csrc/minirv_soc_test.cpp
 SOC_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
 	--top-module minirv_soc --Mdir $(SOC_OBJ_DIR) \
 	-CFLAGS "-std=c++17 -Wall -Wextra -Werror -I$(abspath $(RTL_DIR)/csrc)" \
 	$(SOC_VSRCS) $(SOC_CSRC)
+SOC_AM_BUILD_DIR := $(BUILD_DIR)/soc-am
+SOC_AM_BINARY := $(SOC_AM_BUILD_DIR)/Vminirv_soc
+SOC_AM_CSRC := rtl/csrc/minirv_soc_am_runner.cpp
+SOC_AM_BUILD_COMMAND = verilator --cc --exe --build --trace-fst -Wall \
+	--top-module minirv_soc -GRESET_PC=2147483648 --Mdir $(SOC_AM_BUILD_DIR) \
+	-CFLAGS "-std=c++17 -Wall -Wextra -Werror" \
+	$(SOC_VSRCS) $(SOC_AM_CSRC)
+SOC_AM_RUN_IMAGE = $(if $(strip $(IMAGE)),$(strip $(IMAGE)),$(strip $(AM_IMAGE)))
 
 .PHONY: build test clean rtl-lint rtl-build rtl-test rtl-clean rtl-wave \
 	difftest-build difftest-test difftest-wave difftest-clean regression \
-	am-build am-run am-wave am-clean soc-lint soc-build soc-test soc-wave soc-clean
+	am-build am-run am-wave am-clean soc-lint soc-build soc-test soc-wave soc-clean \
+	soc-am-build soc-am-run soc-am-wave soc-am-clean
 
 build: $(TEST_BINARY)
 
@@ -145,3 +155,23 @@ soc-wave: soc-build
 
 soc-clean:
 	rm -rf $(SOC_BUILD_DIR) $(BUILD_DIR)/minirv_soc.fst
+
+soc-am-build: $(SOC_AM_BINARY)
+
+$(SOC_AM_BINARY): $(SOC_VSRCS) $(SOC_AM_CSRC)
+	@mkdir -p $(SOC_AM_BUILD_DIR)
+	$(SOC_AM_BUILD_COMMAND)
+
+soc-am-run: soc-am-build
+	@test -n "$(SOC_AM_RUN_IMAGE)" || \
+		(echo "IMAGE is required: make soc-am-run IMAGE=/absolute/path/program.bin"; exit 2)
+	$(SOC_AM_BINARY) $(SOC_AM_RUN_IMAGE)
+
+soc-am-wave: soc-am-build
+	@test -n "$(SOC_AM_RUN_IMAGE)" || \
+		(echo "IMAGE is required: make soc-am-wave IMAGE=/absolute/path/program.bin"; exit 2)
+	$(SOC_AM_BINARY) $(SOC_AM_RUN_IMAGE) --fst
+	@test -s $(BUILD_DIR)/minirv_soc_am.fst
+
+soc-am-clean:
+	rm -rf $(SOC_AM_BUILD_DIR) $(BUILD_DIR)/minirv_soc_am.fst
