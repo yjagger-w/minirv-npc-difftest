@@ -1,0 +1,54 @@
+E7-B simulated UART TX and AM putch validation
+================================================
+
+Baseline
+  repository branches and clean worktrees: PASS
+  make regression: PASS
+  emulator: 26/26
+  RTL lint: PASS
+  standalone RTL: 27/27
+  DiffTest: 36/36
+  soc-lint: PASS
+  soc-test: 6/6
+  soc-wave: 1/1; build/minirv_soc.fst nonempty
+
+UART SoC validation
+  soc-lint: PASS
+  soc-test: 11/11
+  soc-wave: 1/1; build/minirv_soc.fst nonempty
+  SB lane write 'A': exactly one 0x41 event
+  SW 0x00000042: exactly one 0x42 event
+  ordered stores: Hello\n
+  UART reads: zero
+  GPIO and RAM regression: PASS
+  settle duplicate-event check: PASS
+  unmapped bus_error: PASS
+  integrated output: UART output: Hello miniRV
+  integrated trap: HIT GOOD TRAP
+
+Abstract Machine
+  putch MMIO address: 0x10000008
+  access: volatile byte store
+  startup/linker/stack/trap/ISA whitelist changes: none
+  uart-hello final-linked strict ISA audit: PASS (53 instructions)
+  SoC AM execution: Hello miniRV; HIT GOOD TRAP
+  SoC AM waveform: build/minirv_soc_am.fst nonempty
+
+Existing cpu-tests string
+  compile: PASS
+  assemble: PASS
+  link: PASS
+  final-linked ISA audit: FAIL as expected
+  unsupported: SRLI=4, JAL=1
+  execution: not attempted
+
+Final regression
+  make regression: PASS
+  emulator: 26/26
+  RTL lint: PASS
+  standalone RTL: 27/27
+  DiffTest: 36/36
+  make soc-lint: PASS
+  make soc-test: 11/11
+  make soc-wave: PASS
+  git diff --check: PASS

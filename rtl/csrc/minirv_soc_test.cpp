@@ -72,6 +72,9 @@ class Rig {
   void cycle() {
     require(cycles_++ < 500U, "SoC cycle limit exceeded");
     tick();
+    if (dut_->uart_tx_valid) {
+      uart_events_.push_back(static_cast<char>(dut_->uart_tx_data));
+    }
     if (dut_->commit_valid && dut_->commit_mem_wen && dut_->ram_valid) {
       apply_ram_store(dut_->commit_mem_addr, dut_->commit_mem_wdata,
                       static_cast<std::uint8_t>(dut_->commit_mem_wmask));
@@ -94,6 +97,7 @@ class Rig {
   }
 
   Vminirv_soc& dut() { return *dut_; }
+  const std::string& uart_output() const { return uart_events_; }
 
  private:
   std::uint32_t instruction(std::uint32_t address) const {
@@ -172,6 +176,7 @@ class Rig {
   std::vector<std::uint32_t> program_;
   std::vector<std::uint8_t> ram_;
   std::size_t cycles_ = 0;
+  std::string uart_events_;
 };
 
 std::uint32_t sw(std::uint32_t rs2, std::uint32_t rs1, std::int32_t offset) {
@@ -180,6 +185,57 @@ std::uint32_t sw(std::uint32_t rs2, std::uint32_t rs1, std::int32_t offset) {
 
 std::uint32_t sb(std::uint32_t rs2, std::uint32_t rs1, std::int32_t offset) {
   return encode_s(offset, rs1, rs2, 0);
+}
+
+std::vector<std::uint32_t> uart_program(const std::string& text) {
+  std::vector<std::uint32_t> program = {lui(1, 0x10000U)};
+  for (const unsigned char character : text) {
+    program.push_back(addi(2, 0, character));
+    program.push_back(sb(2, 1, 8));
+  }
+  program.push_back(kEbreak);
+  return program;
+}
+
+void test_uart_hello(bool waveform) {
+  Rig rig(waveform);
+  rig.load(uart_program("Hello miniRV\n"));
+  rig.run_to_halt();
+  require(rig.uart_output() == "Hello miniRV\n",
+          "UART Hello miniRV output mismatch or duplicate event");
+  std::cout << "UART output: " << rig.uart_output() << "HIT GOOD TRAP\n";
+}
+
+void test_uart_sb_lane(bool) {
+  Rig rig;
+  rig.load({lui(1, 0x10000U), addi(2, 0, 'A'), sb(2, 1, 10), kEbreak});
+  rig.run_to_halt();
+  require(rig.uart_output() == "A", "UART SB did not emit exactly one A");
+}
+
+void test_uart_sw_once(bool) {
+  Rig rig;
+  rig.load({lui(1, 0x10000U), addi(2, 0, 'B'), sw(2, 1, 8), kEbreak});
+  rig.run_to_halt();
+  require(rig.uart_output() == "B", "UART SW emitted other than one B");
+}
+
+void test_uart_multiple_stores(bool) {
+  Rig rig;
+  rig.load(uart_program("Hello\n"));
+  rig.run_to_halt();
+  require(rig.uart_output() == "Hello\n",
+          "UART multiple-store order or event count is wrong");
+}
+
+void test_uart_read_zero_and_isolation(bool) {
+  Rig rig;
+  rig.load({lui(1, 0x10000U), addi(2, 0, 0x33), sw(2, 1, 4),
+            addi(2, 0, 'Z'), sb(2, 1, 8), lw(3, 1, 8), kEbreak});
+  rig.run_to_halt();
+  require(rig.reg(3) == 0U, "UART read did not return zero");
+  require(rig.dut().gpio_output == 0x33U, "UART write changed GPIO output");
+  require(rig.uart_output() == "Z", "UART isolation test event mismatch");
 }
 
 void test_loopback(bool waveform) {
@@ -256,7 +312,12 @@ int main(int argc, char** argv) {
     if (std::string(argv[index]) == "--fst") waveform = true;
     else return 2;
   }
-  const std::array<Test, 6> tests = {{
+  const std::array<Test, 11> tests = {{
+      {"UART Hello miniRV", test_uart_hello},
+      {"UART SB byte lane", test_uart_sb_lane},
+      {"UART SW single event", test_uart_sw_once},
+      {"UART multiple stores", test_uart_multiple_stores},
+      {"UART read zero and isolation", test_uart_read_zero_and_isolation},
       {"integrated GPIO loopback", test_loopback},
       {"GPIO word write and readback", test_gpio_word_and_readback},
       {"GPIO byte write masks", test_gpio_byte_masks},

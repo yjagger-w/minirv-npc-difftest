@@ -20,6 +20,11 @@ module minirv_bus (
     output [3:0]  gpio_wmask,
     input  [31:0] gpio_rdata,
 
+    output        uart_valid,
+    output        uart_write,
+    output [31:0] uart_wdata,
+    output [3:0]  uart_wmask,
+
     output        bus_error
 );
 
@@ -30,6 +35,8 @@ module minirv_bus (
   wire select_gpio_output = (cpu_addr >= 32'h10000004) &&
                             (cpu_addr <= 32'h10000007);
   wire select_gpio = select_gpio_input || select_gpio_output;
+  wire select_uart = (cpu_addr >= 32'h10000008) &&
+                     (cpu_addr <= 32'h1000000b);
   wire [1:0] gpio_byte_offset = cpu_addr[1:0];
 
   assign ram_valid = cpu_valid && select_ram;
@@ -44,8 +51,14 @@ module minirv_bus (
   assign gpio_wdata = cpu_wdata << (gpio_byte_offset * 8);
   assign gpio_wmask = cpu_wmask << gpio_byte_offset;
 
+  assign uart_valid = cpu_valid && select_uart;
+  assign uart_write = cpu_write;
+  assign uart_wdata = cpu_wdata << (gpio_byte_offset * 8);
+  assign uart_wmask = cpu_wmask << gpio_byte_offset;
+
   assign cpu_rdata = select_ram ? ram_rdata :
-                     select_gpio ? (gpio_rdata >> (gpio_byte_offset * 8)) : 32'd0;
-  assign bus_error = cpu_valid && !select_ram && !select_gpio;
+                     select_gpio ? (gpio_rdata >> (gpio_byte_offset * 8)) :
+                     select_uart ? 32'd0 : 32'd0;
+  assign bus_error = cpu_valid && !select_ram && !select_gpio && !select_uart;
 
 endmodule
