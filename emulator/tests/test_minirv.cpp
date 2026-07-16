@@ -35,6 +35,15 @@ std::uint32_t encode_s(std::int32_t immediate, std::uint32_t rs1,
          (funct3 << 12U) | ((bits & 0x1fU) << 7U) | 0x23U;
 }
 
+std::uint32_t encode_b(std::int32_t immediate, std::uint32_t rs1,
+                       std::uint32_t rs2, std::uint32_t funct3) {
+  const std::uint32_t bits = static_cast<std::uint32_t>(immediate) & 0x1fffU;
+  return (((bits >> 12U) & 1U) << 31U) |
+         (((bits >> 5U) & 0x3fU) << 25U) | (rs2 << 20U) | (rs1 << 15U) |
+         (funct3 << 12U) | (((bits >> 1U) & 0xfU) << 8U) |
+         (((bits >> 11U) & 1U) << 7U) | 0x63U;
+}
+
 std::uint32_t addi(std::uint32_t rd, std::uint32_t rs1,
                    std::int32_t immediate) {
   return encode_i(immediate, rs1, 0, rd, 0x13U);
@@ -42,6 +51,15 @@ std::uint32_t addi(std::uint32_t rd, std::uint32_t rs1,
 
 std::uint32_t lui(std::uint32_t rd, std::uint32_t upper) {
   return (upper << 12U) | (rd << 7U) | 0x37U;
+}
+
+std::uint32_t auipc(std::uint32_t rd, std::uint32_t upper) {
+  return (upper << 12U) | (rd << 7U) | 0x17U;
+}
+
+std::uint32_t sltiu(std::uint32_t rd, std::uint32_t rs1,
+                    std::int32_t immediate) {
+  return encode_i(immediate, rs1, 3, rd, 0x13U);
 }
 
 std::uint32_t lw(std::uint32_t rd, std::uint32_t rs1,
@@ -75,6 +93,9 @@ void run_to_ebreak(Emulator& emulator, std::size_t limit = 100) {
           std::string("expected halted, got ") + minirv::status_name(result) +
               ": " + emulator.error_message());
 }
+
+void require_illegal_encoding(std::uint32_t instruction,
+                              const std::string& description);
 
 void test_official_addi_jalr() {
   Emulator emulator;
@@ -129,6 +150,79 @@ void test_lui() {
   load(emulator, {lui(7, 0xabcdeU), kEbreak});
   run_to_ebreak(emulator);
   require(emulator.reg(7) == 0xabcde000U, "LUI placement is wrong");
+}
+
+void test_auipc() {
+  Emulator emulator;
+  load(emulator, {auipc(1, 1), auipc(2, 1), auipc(3, 0xfffffU),
+                  auipc(0, 0x12345U), kEbreak});
+  run_to_ebreak(emulator);
+  require(emulator.reg(1) == 0x1000U, "AUIPC at PC 0 failed");
+  require(emulator.reg(2) == 0x1004U, "AUIPC at nonzero PC failed");
+  require(emulator.reg(3) == 0xfffff008U, "AUIPC high immediate failed");
+  require(emulator.reg(0) == 0U, "AUIPC changed x0");
+  require_illegal_encoding(auipc(16, 0), "AUIPC invalid rd");
+}
+
+void test_sltiu() {
+  Emulator emulator;
+  load(emulator, {sltiu(1, 0, 1), addi(2, 0, 1), sltiu(3, 2, 1),
+                  addi(4, 0, -1), sltiu(5, 4, 1), sltiu(6, 0, -1),
+                  sltiu(7, 4, -1), sltiu(0, 0, 1), kEbreak});
+  run_to_ebreak(emulator);
+  require(emulator.reg(1) == 1U, "SLTIU 0 < 1 failed");
+  require(emulator.reg(3) == 0U, "SLTIU equal operands failed");
+  require(emulator.reg(5) == 0U, "SLTIU unsigned high-bit comparison failed");
+  require(emulator.reg(6) == 1U, "SLTIU -1 sign extension failed");
+  require(emulator.reg(7) == 0U, "SLTIU ffffffff < -1 failed");
+  require(emulator.reg(0) == 0U, "SLTIU changed x0");
+  require_illegal_encoding(sltiu(16, 0, 0), "SLTIU invalid rd");
+  require_illegal_encoding(sltiu(1, 16, 0), "SLTIU invalid rs1");
+}
+
+void test_beq_bne_control_flow() {
+  Emulator emulator;
+  load(emulator, {addi(1, 0, 1), encode_b(8, 1, 0, 1), kEbreak,
+                  addi(1, 0, 0), encode_b(-8, 1, 0, 0), kEbreak});
+  require(emulator.step() == Status::Running, "branch setup failed");
+  require(emulator.step() == Status::Running && emulator.pc() == 12U,
+          "positive BNE failed");
+  std::uint32_t word = 0;
+  require(emulator.read_word(12, word) && word == addi(1, 0, 0),
+          "backward-branch setup instruction missing");
+  require(emulator.step() == Status::Running && emulator.pc() == 16U,
+          "branch body failed");
+  require(emulator.step() == Status::Running && emulator.pc() == 8U,
+          "negative BEQ failed");
+  require(emulator.step() == Status::Halted, "branch target EBREAK failed");
+  require(emulator.pc() == 12U, "positive/negative branch flow failed");
+
+  Emulator not_taken;
+  load(not_taken, {addi(1, 0, 1), encode_b(2, 1, 0, 0),
+                   encode_b(2, 1, 1, 1), kEbreak});
+  run_to_ebreak(not_taken);
+  require(not_taken.trace().size() == 4U, "not-taken branches did not retire");
+}
+
+void test_branch_validation_and_alignment() {
+  require_illegal_encoding(encode_b(4, 16, 0, 0), "BEQ invalid rs1");
+  require_illegal_encoding(encode_b(4, 0, 16, 1), "BNE invalid rs2");
+  require_illegal_encoding(encode_b(4, 0, 0, 2), "illegal branch funct3");
+
+  Emulator taken;
+  load(taken, {encode_b(2, 0, 0, 0)});
+  require(taken.step() == Status::MisalignedAccess,
+          "taken misaligned branch did not trap");
+  require(taken.last_event().trap_cause ==
+              minirv::TrapCause::InstructionAddressMisaligned,
+          "taken misaligned branch used wrong trap cause");
+  require(taken.trace().empty(), "taken misaligned branch retired");
+
+  Emulator not_taken;
+  load(not_taken, {encode_b(2, 0, 0, 1), kEbreak});
+  run_to_ebreak(not_taken);
+  require(not_taken.trace().size() == 2U,
+          "not-taken misaligned-target branch trapped");
 }
 
 void test_lw_sw() {
@@ -306,6 +400,10 @@ int main() {
       {"negative ADDI immediate", test_negative_addi},
       {"ADD and overflow", test_add_and_overflow},
       {"LUI", test_lui},
+      {"AUIPC semantics and validation", test_auipc},
+      {"SLTIU semantics and validation", test_sltiu},
+      {"BEQ/BNE control flow", test_beq_bne_control_flow},
+      {"branch validation and alignment", test_branch_validation_and_alignment},
       {"LW/SW", test_lw_sw},
       {"LW negative offset", test_lw_negative_offset},
       {"SW negative offset", test_sw_negative_offset},

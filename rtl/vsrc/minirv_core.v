@@ -40,6 +40,10 @@ module minirv_core #(
   wire is_add;
   wire is_addi;
   wire is_lui;
+  wire is_auipc;
+  wire is_sltiu;
+  wire is_beq;
+  wire is_bne;
   wire is_lw;
   wire is_lbu;
   wire is_sw;
@@ -52,6 +56,8 @@ module minirv_core #(
   wire decode_illegal;
   wire [31:0] imm_i;
   wire [31:0] imm_s;
+  wire [31:0] imm_b;
+  wire [31:0] imm_u;
   wire [4:0] rd_field = imem_rdata[11:7];
   wire [4:0] rs1_field = imem_rdata[19:15];
   wire [4:0] rs2_field = imem_rdata[24:20];
@@ -60,24 +66,31 @@ module minirv_core #(
   wire [31:0] alu_rhs = (is_add || is_jalr) ? rs2_data : imm_i;
   wire [31:0] alu_sum;
   wire [31:0] effective_addr = rs1_data + (is_sw || is_sb ? imm_s : imm_i);
+  wire branch_taken = (is_beq && (rs1_data == rs2_data)) ||
+                      (is_bne && (rs1_data != rs2_data));
+  wire [31:0] branch_target = pc + imm_b;
+  wire branch_misaligned = branch_taken && (|branch_target[1:0]);
   wire invalid_register = (use_rd && rd_field[4]) ||
                           (use_rs1 && rs1_field[4]) ||
                           (use_rs2 && rs2_field[4]);
   wire fetch_misaligned = |pc[1:0];
   wire load_misaligned = is_lw && (|effective_addr[1:0]);
   wire store_misaligned = is_sw && (|effective_addr[1:0]);
-  wire instruction_trap = fetch_misaligned || decode_illegal ||
+  wire instruction_trap = fetch_misaligned || branch_misaligned || decode_illegal ||
                           invalid_register || load_misaligned ||
                           store_misaligned;
   wire execute_enable = !reset && !halted && !instruction_trap;
-  wire result_instruction = is_add || is_addi || is_lui || is_lw ||
-                            is_lbu || is_jalr;
+  wire result_instruction = is_add || is_addi || is_lui || is_auipc ||
+                            is_sltiu || is_lw || is_lbu || is_jalr;
   wire register_write = execute_enable && result_instruction &&
                         (rd_field[3:0] != 4'd0);
   wire [31:0] sequential_pc = pc + 32'd4;
   wire [31:0] jalr_target = (rs1_data + imm_i) & 32'hfffffffe;
-  wire [31:0] next_pc = is_jalr ? jalr_target : sequential_pc;
-  wire [31:0] writeback_data = is_lui ? {imem_rdata[31:12], 12'd0} :
+  wire [31:0] next_pc = is_jalr ? jalr_target :
+                            branch_taken ? branch_target : sequential_pc;
+  wire [31:0] writeback_data = is_lui ? imm_u :
+                                   is_auipc ? (pc + imm_u) :
+                                   is_sltiu ? (rs1_data < imm_i ? 32'd1 : 32'd0) :
                                    is_lw ? dmem_rdata :
                                    is_lbu ? {24'd0, dmem_rdata[7:0]} :
                                    is_jalr ? sequential_pc : alu_sum;
@@ -94,6 +107,10 @@ module minirv_core #(
       .is_add(is_add),
       .is_addi(is_addi),
       .is_lui(is_lui),
+      .is_auipc(is_auipc),
+      .is_sltiu(is_sltiu),
+      .is_beq(is_beq),
+      .is_bne(is_bne),
       .is_lw(is_lw),
       .is_lbu(is_lbu),
       .is_sw(is_sw),
@@ -110,8 +127,11 @@ module minirv_core #(
       .imm_i_bits(imem_rdata[31:20]),
       .imm_s_high(imem_rdata[31:25]),
       .imm_s_low(imem_rdata[11:7]),
+      .instr(imem_rdata[31:7]),
       .imm_i(imm_i),
-      .imm_s(imm_s)
+      .imm_s(imm_s),
+      .imm_b(imm_b),
+      .imm_u(imm_u)
   );
 
   minirv_alu alu (
@@ -161,7 +181,7 @@ module minirv_core #(
         if (instruction_trap) begin
           halted <= 1'b1;
           trap_valid <= 1'b1;
-          if (fetch_misaligned) begin
+          if (fetch_misaligned || branch_misaligned) begin
             trap_cause <= 4'd2;
           end else if (load_misaligned) begin
             trap_cause <= 4'd3;

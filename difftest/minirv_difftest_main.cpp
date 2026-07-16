@@ -26,6 +26,9 @@ namespace {
 using minirv::StepEvent;
 using minirv::TrapCause;
 using minirv_encoding::addi;
+using minirv_encoding::auipc;
+using minirv_encoding::beq;
+using minirv_encoding::bne;
 using minirv_encoding::encode_i;
 using minirv_encoding::encode_r;
 using minirv_encoding::encode_s;
@@ -34,6 +37,7 @@ using minirv_encoding::kEbreak;
 using minirv_encoding::lbu;
 using minirv_encoding::lui;
 using minirv_encoding::lw;
+using minirv_encoding::sltiu;
 
 constexpr std::size_t kMemorySize = 64U * 1024U;
 constexpr std::size_t kCycleLimit = 300;
@@ -73,7 +77,11 @@ const char* instruction_name(std::uint32_t instruction) {
   if (instruction == kEbreak) return "EBREAK";
   if (opcode == 0x33U && funct3 == 0U && funct7 == 0U) return "ADD";
   if (opcode == 0x13U && funct3 == 0U) return "ADDI";
+  if (opcode == 0x13U && funct3 == 3U) return "SLTIU";
   if (opcode == 0x37U) return "LUI";
+  if (opcode == 0x17U) return "AUIPC";
+  if (opcode == 0x63U && funct3 == 0U) return "BEQ";
+  if (opcode == 0x63U && funct3 == 1U) return "BNE";
   if (opcode == 0x03U && funct3 == 2U) return "LW";
   if (opcode == 0x03U && funct3 == 4U) return "LBU";
   if (opcode == 0x23U && funct3 == 2U) return "SW";
@@ -444,6 +452,34 @@ std::vector<TestSpec> make_tests() {
        {}, {}, {}, {{3, 16U}, {6, 0U}}, {}, {}},
       {"LUI", {lui(7, 0xabcdeU), kEbreak}, {}, {}, {},
        {{7, 0xabcde000U}}, {}, {}},
+      {"AUIPC semantics",
+       {auipc(1, 1), auipc(2, 1), auipc(3, 0xfffffU),
+        auipc(0, 0x12345U), kEbreak},
+       {}, {}, {}, {{1, 0x1000U}, {2, 0x1004U}, {3, 0xfffff008U}, {0, 0U}},
+       {}, {}},
+      {"SLTIU semantics",
+       {sltiu(1, 0, 1), addi(2, 0, 1), sltiu(3, 2, 1),
+        addi(4, 0, -1), sltiu(5, 4, 1), sltiu(6, 0, -1),
+        sltiu(7, 4, -1), sltiu(0, 0, 1), kEbreak},
+       {}, {}, {}, {{1, 1U}, {3, 0U}, {5, 0U}, {6, 1U}, {7, 0U}, {0, 0U}},
+       {}, {}},
+      {"BEQ/BNE forward and backward",
+       {addi(1, 0, 1), bne(1, 0, 8), kEbreak, addi(1, 0, 0),
+        beq(1, 0, -8), kEbreak},
+       {}, {}, {}, {{1, 0U}}, {}, 12U},
+      {"not-taken misaligned branch targets",
+       {addi(1, 0, 1), beq(1, 0, 2), bne(1, 1, 2), kEbreak},
+       {}, {}, {}, {{1, 1U}}, {}, 16U},
+      {"taken misaligned branch target", {beq(0, 0, 2)}, {}, {},
+       TrapCause::InstructionAddressMisaligned, {}, {}, 0U},
+      {"AUIPC invalid RV32E rd", {auipc(16, 0)}, {}, {},
+       TrapCause::IllegalInstruction, {}, {}, {}},
+      {"SLTIU invalid RV32E rs1", {sltiu(1, 16, 0)}, {}, {},
+       TrapCause::IllegalInstruction, {}, {}, {}},
+      {"branch invalid RV32E rs2", {bne(0, 16, 4)}, {}, {},
+       TrapCause::IllegalInstruction, {}, {}, {}},
+      {"illegal branch funct3", {minirv_encoding::encode_b(4, 0, 0, 2)},
+       {}, {}, TrapCause::IllegalInstruction, {}, {}, {}},
       {"LW and SW",
        {addi(1, 0, 256), lui(2, 0x12345U), addi(2, 2, 0x678),
         encode_s(0, 1, 2, 2), lw(3, 1, 0), kEbreak},

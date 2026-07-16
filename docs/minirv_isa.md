@@ -1,8 +1,8 @@
-# miniRV E5 ISA emulator
+# miniRV ISA emulator
 
 ## Architectural state
 
-The emulator implements the E5 miniRV subset in C++17. The program counter is a
+The emulator implements the current miniRV subset in C++17. The program counter is a
 32-bit value reset to `0x00000000`. There are sixteen 32-bit integer registers,
 `x0` through `x15`; `x0` is forced to zero after every retired instruction.
 Any implemented instruction that encodes an operand register from `x16` through
@@ -20,6 +20,10 @@ four-byte aligned.
 | `ADD` | opcode `0x33`, funct3 `0`, funct7 `0` | `rd = rs1 + rs2` |
 | `ADDI` | opcode `0x13`, funct3 `0` | `rd = rs1 + sext(imm12)` |
 | `LUI` | opcode `0x37` | `rd = instruction[31:12] << 12` |
+| `AUIPC` | opcode `0x17` | `rd = pc + (instruction[31:12] << 12)` |
+| `SLTIU` | opcode `0x13`, funct3 `3` | `rd = unsigned(rs1) < unsigned(sext(imm12))` |
+| `BEQ` | opcode `0x63`, funct3 `0` | branch when `rs1 == rs2` |
+| `BNE` | opcode `0x63`, funct3 `1` | branch when `rs1 != rs2` |
 | `LW` | opcode `0x03`, funct3 `2` | `rd = mem32[rs1 + sext(imm12)]` |
 | `LBU` | opcode `0x03`, funct3 `4` | `rd = zero_extend(mem8[rs1 + sext(imm12)])` |
 | `SW` | opcode `0x23`, funct3 `2` | `mem32[rs1 + sext(s_imm12)] = rs2` |
@@ -30,6 +34,10 @@ four-byte aligned.
 `LW` and `SW` require four-byte-aligned data addresses. `LBU` and `SB` have no
 data-alignment restriction. JALR reads its source before writing its destination,
 so `jalr x1, imm(x1)` behaves correctly.
+
+Taken branch targets must be four-byte aligned and otherwise raise instruction-
+address misalignment. Not-taken branches always advance by four and do not trap
+on the alignment of their encoded target.
 
 ## Execution and errors
 

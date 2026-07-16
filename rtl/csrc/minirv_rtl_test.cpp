@@ -19,6 +19,9 @@ namespace {
 
 constexpr std::size_t kCycleLimit = 200;
 using minirv_encoding::addi;
+using minirv_encoding::auipc;
+using minirv_encoding::beq;
+using minirv_encoding::bne;
 using minirv_encoding::encode_i;
 using minirv_encoding::encode_r;
 using minirv_encoding::encode_s;
@@ -27,6 +30,7 @@ using minirv_encoding::kEbreak;
 using minirv_encoding::lbu;
 using minirv_encoding::lui;
 using minirv_encoding::lw;
+using minirv_encoding::sltiu;
 
 void require(bool condition, const std::string& message) {
   if (!condition) {
@@ -206,6 +210,65 @@ void test_lui(bool waveform) {
   require(rig.reg(7) == 0xabcde000U, "LUI failed");
 }
 
+void test_auipc(bool waveform) {
+  Rig rig(waveform);
+  rig.load({auipc(1, 1), auipc(2, 1), auipc(3, 0xfffffU),
+            auipc(0, 0x12345U), kEbreak});
+  rig.run_to_halt();
+  require(rig.reg(1) == 0x1000U, "AUIPC at PC 0 failed");
+  require(rig.reg(2) == 0x1004U, "AUIPC at nonzero PC failed");
+  require(rig.reg(3) == 0xfffff008U, "AUIPC high immediate failed");
+  require(rig.reg(0) == 0U, "AUIPC changed x0");
+}
+
+void test_sltiu(bool waveform) {
+  Rig rig(waveform);
+  rig.load({sltiu(1, 0, 1), addi(2, 0, 1), sltiu(3, 2, 1),
+            addi(4, 0, -1), sltiu(5, 4, 1), sltiu(6, 0, -1),
+            sltiu(7, 4, -1), sltiu(0, 0, 1), kEbreak});
+  rig.run_to_halt();
+  require(rig.reg(1) == 1U && rig.reg(3) == 0U && rig.reg(5) == 0U &&
+              rig.reg(6) == 1U && rig.reg(7) == 0U && rig.reg(0) == 0U,
+          "SLTIU edge cases failed");
+}
+
+void test_branches(bool waveform) {
+  Rig rig(waveform);
+  rig.load({addi(1, 0, 1), bne(1, 0, 8), kEbreak, addi(1, 0, 0),
+            beq(1, 0, -8), kEbreak});
+  rig.run_to_halt();
+  require(rig.dut().commit_pc == 8U, "forward/backward branch flow failed");
+
+  Rig not_taken;
+  not_taken.load({addi(1, 0, 1), beq(1, 0, 2), bne(1, 1, 2), kEbreak});
+  not_taken.run_to_halt();
+  require(!not_taken.dut().trap_valid, "not-taken branch trapped");
+}
+
+void test_new_instruction_validation(bool waveform) {
+  Rig auipc_rd(waveform);
+  auipc_rd.load({auipc(16, 0)});
+  expect_trap(auipc_rd, 1);
+  Rig sltiu_rd;
+  sltiu_rd.load({sltiu(16, 0, 0)});
+  expect_trap(sltiu_rd, 1);
+  Rig sltiu_rs1;
+  sltiu_rs1.load({sltiu(1, 16, 0)});
+  expect_trap(sltiu_rs1, 1);
+  Rig branch_rs1;
+  branch_rs1.load({beq(16, 0, 4)});
+  expect_trap(branch_rs1, 1);
+  Rig branch_rs2;
+  branch_rs2.load({bne(0, 16, 4)});
+  expect_trap(branch_rs2, 1);
+  Rig illegal_branch;
+  illegal_branch.load({minirv_encoding::encode_b(4, 0, 0, 2)});
+  expect_trap(illegal_branch, 1);
+  Rig misaligned;
+  misaligned.load({beq(0, 0, 2)});
+  expect_trap(misaligned, 2);
+}
+
 void test_lw_sw(bool waveform) {
   Rig rig(waveform);
   rig.load({addi(1, 0, 256), lui(2, 0x12345U), addi(2, 2, 0x678),
@@ -359,6 +422,10 @@ int main(int argc, char** argv) {
       {"negative ADDI", test_negative_addi},
       {"ADD and overflow", test_add_overflow},
       {"LUI", test_lui},
+      {"AUIPC", test_auipc},
+      {"SLTIU", test_sltiu},
+      {"BEQ/BNE", test_branches},
+      {"new instruction validation", test_new_instruction_validation},
       {"LW/SW", test_lw_sw},
       {"negative LW offset", test_negative_lw},
       {"negative SW offset", test_negative_sw},
