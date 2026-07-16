@@ -1,0 +1,28 @@
+E7-A minimal simulated SoC validation
+=====================================
+
+Baseline and final CPU regression
+  emulator: 26/26
+  RTL lint: PASS
+  standalone RTL: 27/27
+  DiffTest: 36/36
+
+SoC validation
+  make soc-lint: PASS
+  make soc-test: PASS (6/6)
+  make soc-wave: PASS (1/1)
+  build/minirv_soc.fst: nonempty
+
+Integrated loopback output
+  GPIO input:  0x0000005a
+  GPIO output: 0x0000005a
+  HIT GOOD TRAP
+
+Covered behavior
+  GPIO input LW: PASS
+  GPIO output SW 0x12345678: PASS
+  GPIO output readback: PASS
+  GPIO SB byte masks and untouched bytes: PASS
+  writes to GPIO input ignored: PASS
+  RAM through address decoder: PASS
+  unmapped access bus_error: PASS
