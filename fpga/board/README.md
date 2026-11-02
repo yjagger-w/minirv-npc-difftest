@@ -79,8 +79,14 @@ Neither simulator establishes physical oscillator, board power or PS state.
 
 ## Hardware limits
 
-Physical programming and board tests are NOT EXECUTED. ZPS7-1 remains Warning
-because there is no PS7 instance/default-configuration design; it is not waived.
+JTAG programming succeeded on 2026-11-02. Initial smoke LEDs and BTN0 replay,
+and the same checks after full power removal and JTAG reload, passed according
+to user observations. Video additionally supports the normal LEDs and about 3Hz
+heartbeat; it does not independently establish the complete BTN0/power-cycle
+sequence. See [hardware validation](hardware-validation-20261102.md) for evidence
+levels and remaining unknowns. The 125MHz reference was not instrument-measured.
+ZPS7-1 remains Warning because there is no PS7 instance/default-configuration
+design; it is not waived.
 The 125MHz input comes from the Ethernet PHY and disappears if PHYRSTB is low.
 Confirm board revision and PS/PHY boot conditions before download; no PS register
 writes or unreviewed initialization scripts are supplied.

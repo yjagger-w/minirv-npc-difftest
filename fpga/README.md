@@ -2,7 +2,9 @@
 
 本目录将现有单周期 `minirv_soc` 接入可综合的片上 ROM/RAM，目标为
 TUL PYNQ-Z2 / `xc7z020clg400-1`。原 core、SoC 和 reference 语义不变。
-**物理下载、板卡运行和频率测量均未执行。**
+**v4 已完成 JTAG 配置；首次运行及断电重下载后的 LED 自检、BTN0 重跑由用户确认达到预期。**
+视频补充支持灯态与约 3Hz 心跳；125MHz 参考未实测。证据级别与限制见
+[实板验收记录](board/hardware-validation-20261102.md)。
 
 ## 50MHz 板级结果
 
@@ -93,6 +95,8 @@ bitgen 成功不等于已证明 PS 默认配置或冷启动可用；不降级、
 Manager 连接直接观测 LOCKED/reset。
 
 预期正常 LED0亮、LED1灭、LED2亮、LED3约2.98Hz闪烁；BTN0释放后应重跑。
-配置 DONE 与 LED0/EBREAK 不同，物理板测仍为**未执行**。排查顺序为下载状态
+配置 DONE 与 LED0/EBREAK 不同；本轮分别保存工具配置结果、用户运行反馈和视频证据，
+不以 DONE 代替程序通过。详见 [实板验收记录](board/hardware-validation-20261102.md)。
+排查顺序为下载状态
 →参考时钟→MMCM锁定→CPU复位→程序结果。断电后需重新JTAG下载；不提供 BOOT.bin
 或 Flash 自动启动方案。来源及校验值见 [pynq-provenance.txt](pynq-provenance.txt)。
