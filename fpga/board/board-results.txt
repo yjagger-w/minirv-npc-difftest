@@ -1,0 +1,41 @@
+PYNQ-Z2 board baseline v4, 2026-11-02
+Vivado 2025.2 build 6299465; xc7z020clg400-1; minirv_pynq_z2.
+Reference 125MHz/8ns; real MMCM/BUFG CPU clock 50MHz/20ns.
+Default ROM/RAM each 1KiB; RAM asynchronous read, posedge byte writes.
+
+Synthesis: 948 LUT (820 logic +128 LUTRAM), 319 FF, no BRAM/DSP.
+Routed: 918 LUT (790 logic +128 LUTRAM), 319 FF, 1 MMCM, 2 BUFG, six package I/Os.
+  Setup WNS +2.595ns / TNS 0 / zero failing endpoints.
+  Hold WHS +0.160ns / THS 0 / zero failing endpoints.
+  Worst setup: system/soc/core/pc_reg[26]/C ->
+    system/soc/core/regfile/registers_reg[1][3]/D.
+  19 logic levels, 17.116ns data path (4.435 logic /12.681 routed nets).
+  Worst hold: reset_release/sync_ff_reg[0]/C -> sync_ff_reg[1]/D.
+  Physical RAM: four 256x8 lanes, 32 RAM256X1S ->128 RAMS64E/LUTRAM LUTs.
+  Hierarchical RAM* count 160 double-counts parent/child cells, not physical LUTs.
+  ROM is optimized fixed-image logic. Debug/commit pruning changes scope, not
+  demonstrated core optimization. No Fmax extrapolation or 125MHz claim.
+
+Simulation: Verilator board self-test PASS; existing regression 26/26 emulator,
+27/27 RTL, 36/36 DiffTest, 11/11 SoC, both lint PASS. XSim UNISIM RTL PASS;
+routed functional netlist startup/reset replay PASS (no SDF).
+
+Constraints: no unclocked/internal unconstrained endpoints; four LED max-delay
+paths covered; one no_input_delay warning for asynchronous BTN0. Exceptions
+only to three reset FF PRE/CLR controls. CDC-9 Info recognizes reset synchronizer.
+ZPS7-1 Warning remains enabled: PS7 block required. No waiver/severity downgrade.
+
+write_bitstream actually succeeded from the same frozen routed DCP, exit 0,
+DRC precheck zero errors. ZPS7-1 remained in the focused report.
+Bitstream: 4,045,690 bytes, SHA256
+900c325e348ec74295ca06c6847710261e1221501fbcadd4474fc7db2ccecec0
+Frozen routed DCP SHA256:
+8efbc6a0f9885b6d8d2923724bab9ea453cb531078eeb3a3b910fed3886d55b5
+ROM smoke.hex SHA256:
+e7a22c7c78e2f12f732d95834feb8d25cafaeeefe829a9e60a50894fabbae187
+Hashes identify original archived artifacts, not guaranteed byte-identical rebuilds.
+
+Physical board tests: NOT EXECUTED. PS/PHY boot state and stable H16 reference
+must be verified before download. Lost lock requires BTN0/MMCM reset; no automatic
+lost-lock restart or PS initialization supplied. See README for exact commands.
+Generated DCP/bitstream/waves/caches and full raw reports are excluded from Git.

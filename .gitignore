@@ -13,3 +13,16 @@
 Thumbs.db
 
 .git.invalid-backup/
+
+# Vivado / XSim generated artifacts (keep ROM source initialization files).
+.Xil/
+xsim.dir/
+*.dcp
+*.bit
+*.wdb
+*.jou
+*.rpt
+*.log
+*.pb
+*.wcfg
+__pycache__/
