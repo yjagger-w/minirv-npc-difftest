@@ -35,7 +35,14 @@ ROM smoke.hex SHA256:
 e7a22c7c78e2f12f732d95834feb8d25cafaeeefe829a9e60a50894fabbae187
 Hashes identify original archived artifacts, not guaranteed byte-identical rebuilds.
 
-Physical board tests: NOT EXECUTED. PS/PHY boot state and stable H16 reference
-must be verified before download. Lost lock requires BTN0/MMCM reset; no automatic
-lost-lock restart or PS initialization supplied. See README for exact commands.
+Hardware update 2026-11-02: two JTAG configurations succeeded with Vivado exit 0,
+DONE internal/pin=1, EOS=1, CRC/IDCODE/security errors=0. Initial and post-power-cycle
+LED smoke checks plus BTN0 replay PASS_USER_REPORTED. Before the second download,
+all user LEDs were off per user; hardware DONE/EOS=0. Video supports LED0/2 on,
+LED1 off and approximately 3Hz LED3; complete reset sequence is not independently
+verified by video. H16/PHY reset/MMCM LOCKED not directly measured; exact PS/SD
+boot state and board revision not independently established. No autonomous boot
+or universal cold-start claim. ZPS7-1 remains unchanged. Lost lock requires BTN0;
+no automatic lost-lock restart or PS initialization supplied. See
+hardware-validation-20261102.md for evidence, hashes and limitations.
 Generated DCP/bitstream/waves/caches and full raw reports are excluded from Git.
