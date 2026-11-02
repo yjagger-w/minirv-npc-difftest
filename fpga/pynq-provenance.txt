@@ -1,0 +1,40 @@
+PYNQ-Z2 source provenance (retrieved 2026-11-02, Asia/Hong_Kong)
+Target: TUL PYNQ-Z2, XC7Z020-1CLG400C; Vivado part xc7z020clg400-1.
+Physical board revision remains to be checked before programming.
+
+Official source chain:
+https://www.amd.com/zh-tw/corporate/university-program/aup-boards/pynq-z2.html
+  Board device and 125MHz PL /50MHz PS references.
+https://pynq.readthedocs.io/en/v2.7.0/overlay_design_methodology/board_settings.html
+  PYNQ documentation v2.7.0 links the vendor Master XDC download:
+https://dpoauwgwqsy2x.cloudfront.net/Download/pynq-z2_v1.0.xdc.zip
+
+Vendor filename version v1.0 (not a physical-board-revision claim):
+  ZIP SHA256: 60e6d72e3fd9d8771da60567e038be2e69baf9a95290b627a4955aa89c3048f3
+  PYNQ-Z2 v1.0.xdc SHA256:
+    07441e999bac956c77e78091c782cade278efc5a78affc51e5b12b4800b1fe73
+  PYNQ-Z2 v1.0.tcl SHA256 (never executed):
+    1ebb6c4b332cb7f5f925488e6bce6aa2ce683469d0af7a4a34d6278cbbc6b6f2
+  XDC clock lines 8-9: H16 /LVCMOS33 /8.00ns /waveform {0 4}.
+
+Manufacturer Reference Manual v1.1, 2019-10-28:
+https://dpoauwgwqsy2x.cloudfront.net/Download/PYNQ_Z2_User_Manual_v1.1.pdf
+  SHA256: af38e175e8197b4e28edcd14c43a136ef85cd860ef71143d3edd73853e62a62c
+  Sections 5/11: H16 125MHz comes from PHY; PHYRSTB/MIO9 low disables it.
+  Section 14: BTN0 D19 active-high; LEDs R14/P14/N16/M14 active-high.
+  PHY standalone autonegotiation is not proof that all cold-start states have
+  a stable H16 reference. Confirm actual PS/PHY boot conditions before download.
+  The referenced R12 schematic download returned AccessDenied; no inference about
+  physical reset pullups/cold-start MIO9 voltage was made.
+
+Clocking and reset references:
+https://docs.amd.com/r/2024.2-English/ug953-vivado-7series-libraries/MMCME2_BASE
+https://www.amd.com/content/dam/xilinx/support/documents/user_guides/ug472_7Series_Clocking.pdf
+  RST/LOCKED contract: restore stable reference and reset MMCM after lost lock.
+https://docs.amd.com/r/en-US/ug585-zynq-7000-SoC-TRM/JTAG-Slave-Boot
+  UG585 1.15: minimal JTAG boot configuration is not board-specific FSBL execution.
+
+Derived constraints enable only actual board ports. pynq_z2_clock.xdc is a
+clock-only integration reference; board/pynq_z2_board.xdc is the actual board file.
+Original downloads and full execution evidence are in independent local archives;
+Git contains provenance/hashes and derived constraints, not vendor binaries.

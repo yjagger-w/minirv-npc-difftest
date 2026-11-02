@@ -1,0 +1,24 @@
+PYNQ-Z2 core / SoC OOC baseline, 2026-11-02
+Vivado 2025.2 build 6299465; xc7z020clg400-1; 8ns evaluation clock.
+
+Core: 830 LUT, 681 FF, no BRAM/DSP.
+  Post-synthesis WNS -0.459ns, TNS -220.323ns; 480 failing setup endpoints.
+  Start regfile/registers_reg[13][5]/C; end registers_reg[10][0]/CE.
+  10 logic levels; data delay 8.206ns (2.645 logic /5.561 estimated nets).
+  Read mux/arithmetic/branch control -> halt/trap/execute-enable -> GPR CE.
+  Missing external I/O delays: 65 inputs /336 outputs.
+
+SoC: 963 LUT, 722 FF, no BRAM/DSP.
+  Post-synthesis WNS -1.022ns, TNS -926.266ns; 1234 failing setup endpoints.
+  Start core/regfile/registers_reg[13][4]/C; end registers_reg[10][0]/CE.
+  11 logic levels; data delay 8.769ns (2.753 logic /6.016 estimated nets).
+  Missing external I/O delays: 97 inputs /378 outputs.
+
+Both flows completed, but 8ns timing failed. These are unplaced estimates with
+external memory/debug timing gaps and no actual clock-buffer placement. They
+are not verified Fmax measurements. Board-level scope/ROM constants/debug pruning
+differ; do not describe resource differences as CPU optimization benefits.
+
+Reproduce with vivado_ooc.tcl (explicit ROOT TOP PART PERIOD NEW_OUTPUT), or
+run-pynq-baseline.tcl (ROOT NEW_OUTPUT) for both 8ns evaluations.
+Raw reports/checkpoints remain in the independent validation archive, not Git.
